@@ -1,0 +1,24 @@
+# Ignoring files in blockchain_app directory
+
+# dependencies
+/backend/node_modules/
+/blockchain_app/node_modules
+/blockchain_app/.pnp
+/blockchain_app/.pnp.js
+
+# testing
+/blockchain_app/coverage
+
+# production
+/blockchain_app/build
+
+# misc
+/blockchain_app/.DS_Store
+/blockchain_app/.env.local
+/blockchain_app/.env.development.local
+/blockchain_app/.env.test.local
+/blockchain_app/.env.production.local
+
+/blockchain_app/npm-debug.log*
+/blockchain_app/yarn-debug.log*
+/blockchain_app/yarn-error.log*
