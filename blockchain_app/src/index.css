@@ -1,5 +1,8 @@
-body {
-  margin: 0;
-  
+h1,
+h4 {
+  text-align: center;
 }
 
+.container {
+  max-width: 960px;
+}
