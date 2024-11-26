@@ -1,7 +1,15 @@
 import { useState } from "react";
 import NavBar from "../component/NavigationBar";
-import { Form, Button, Table, Container, Row, Col, Spinner } from "react-bootstrap";
-import { uploadMetadataToPinata } from "../utils/uploadToPinata"; 
+import {
+  Form,
+  Button,
+  Table,
+  Container,
+  Row,
+  Col,
+  Spinner,
+} from "react-bootstrap";
+import { uploadMetadataToPinata } from "../utils/uploadToPinata";
 import { ethers, BrowserProvider } from "ethers";
 import NFTMinterABI from "../contracts/NFTminter.json";
 
@@ -14,7 +22,7 @@ const SellerPortal = () => {
     quantity: "",
   });
 
-  const [tickets, setTickets] = useState<any[]>([]); 
+  const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,9 +49,16 @@ const SellerPortal = () => {
 
       const provider = new BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
-      const nftContract = new ethers.Contract("0xYourContractAddress", NFTMinterABI, signer);
+      const nftContract = new ethers.Contract(
+        "0x29AAD2ad9C5DAA81992F0a7797aD175DB732f183",
+        NFTMinterABI,
+        signer
+      );
 
-      const transaction = await nftContract.mintNFT(await signer.getAddress(), tokenURI);
+      const transaction = await nftContract.mintNFT(
+        await signer.getAddress(),
+        tokenURI
+      );
       await transaction.wait();
 
       const newTicket = {
@@ -130,8 +145,16 @@ const SellerPortal = () => {
                   onChange={handleInputChange}
                 />
               </Form.Group>
-              <Button variant="primary" onClick={handleCreateListing} disabled={loading}>
-                {loading ? <Spinner animation="border" size="sm" /> : "Mint and List Tickets"}
+              <Button
+                variant="primary"
+                onClick={handleCreateListing}
+                disabled={loading}
+              >
+                {loading ? (
+                  <Spinner animation="border" size="sm" />
+                ) : (
+                  "Mint and List Tickets"
+                )}
               </Button>
             </Form>
           </Col>
