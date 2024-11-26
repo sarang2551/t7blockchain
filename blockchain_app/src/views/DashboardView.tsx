@@ -7,6 +7,7 @@ import MarketplaceJSON from "../utils/Marketplace.json"
 import { GetIpfsUrlFromPinata } from "../utils/pinata";
 import axios from "axios"
 import {ethers} from "ethers"
+import { NFT } from "../interfaces/INFT";
 
 const DashboardView = () => {
   const [data, updateData] = useState<NFT[]>([]);

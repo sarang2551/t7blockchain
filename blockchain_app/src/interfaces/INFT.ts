@@ -1,4 +1,4 @@
-interface NFT {
+export interface NFT {
     tokenId:number
     seller:string
     owner:string

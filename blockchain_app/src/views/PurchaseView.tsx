@@ -3,7 +3,8 @@ import {useParams} from 'react-router-dom'
 import { GetIpfsUrlFromPinata } from "../utils/pinata";
 import MarketplaceJSON from "../utils/Marketplace.json";
 import axios from "axios";
-import ethers from 'ethers'
+import {ethers} from 'ethers'
+import { NFT } from "../interfaces/INFT";
 
 const PurchaseView = ()=>{
     // query backend to get event data
