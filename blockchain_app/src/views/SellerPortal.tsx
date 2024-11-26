@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import NavBar from "../component/NavigationBar";
-import { Form, Button, Table, Container, Row, Col } from "react-bootstrap";
+import { Form, Button, Table, Container, Row, Col, Spinner } from "react-bootstrap";
+import { uploadMetadataToPinata } from "../utils/uploadToPinata"; 
+import { ethers, BrowserProvider } from "ethers";
+import NFTMinterABI from "../contracts/NFTminter.json";
 
 const SellerPortal = () => {
   const [formData, setFormData] = useState({
@@ -11,28 +14,60 @@ const SellerPortal = () => {
     quantity: "",
   });
 
-  const [tickets, setTickets] = useState<any[]>([]); // List of tickets created by the seller
+  const [tickets, setTickets] = useState<any[]>([]); 
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleCreateListing = () => {
-    // Mimic creating a ticket and adding to the table
-    const newTicket = {
-      ...formData,
-      id: tickets.length + 1,
-      status: "Available",
-    };
-    setTickets([...tickets, newTicket]);
-    setFormData({
-      eventName: "",
-      date: "",
-      location: "",
-      price: "",
-      quantity: "",
-    });
+  const handleCreateListing = async () => {
+    setLoading(true);
+
+    try {
+      // Step 1: Upload metadata to Pinata
+      const metadata = {
+        name: formData.eventName,
+        description: `Event at ${formData.location} on ${formData.date}`,
+        attributes: {
+          price: `${formData.price} ETH`,
+          quantity: formData.quantity,
+        },
+      };
+
+      const metadataCID = await uploadMetadataToPinata(metadata);
+      const tokenURI = `https://gateway.pinata.cloud/ipfs/${metadataCID}`;
+
+      const provider = new BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const nftContract = new ethers.Contract("0xYourContractAddress", NFTMinterABI, signer);
+
+      const transaction = await nftContract.mintNFT(await signer.getAddress(), tokenURI);
+      await transaction.wait();
+
+      const newTicket = {
+        ...formData,
+        id: tickets.length + 1,
+        status: "Minted",
+      };
+      setTickets([...tickets, newTicket]);
+
+      setFormData({
+        eventName: "",
+        date: "",
+        location: "",
+        price: "",
+        quantity: "",
+      });
+
+      alert("Ticket minted and listed successfully!");
+    } catch (error) {
+      console.error("Error minting ticket:", error);
+      alert("Failed to mint the ticket. Check the console for details.");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -95,8 +130,8 @@ const SellerPortal = () => {
                   onChange={handleInputChange}
                 />
               </Form.Group>
-              <Button variant="primary" onClick={handleCreateListing}>
-                Mint and List Tickets
+              <Button variant="primary" onClick={handleCreateListing} disabled={loading}>
+                {loading ? <Spinner animation="border" size="sm" /> : "Mint and List Tickets"}
               </Button>
             </Form>
           </Col>
