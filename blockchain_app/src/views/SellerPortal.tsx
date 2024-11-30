@@ -47,10 +47,24 @@ const SellerPortal = () => {
       const metadataCID = await uploadMetadataToPinata(metadata);
       const tokenURI = `https://gateway.pinata.cloud/ipfs/${metadataCID}`;
 
-      const provider = new BrowserProvider((window as any).ethereum);
-      const signer = await provider.getSigner();
+      if (!window.ethereum) {
+        alert("MetaMask is not installed!");
+        setLoading(false);
+        return;
+      }
+
+      const networkVersion = await window.ethereum.request({ method: 'net_version' });
+      if (networkVersion !== "17000") {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x4268" }], // Hexadecimal for Holesky (17000)
+        });
+      }
+      
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner(0);
       const nftContract = new ethers.Contract(
-        "0x29AAD2ad9C5DAA81992F0a7797aD175DB732f183",
+        "0x3F63A00116bFDA640986f868F93cf3be094045e4",
         NFTMinterABI,
         signer
       );
