@@ -9,7 +9,7 @@ import {
   Col,
   Spinner,
 } from "react-bootstrap";
-import { uploadMetadataToPinata } from "../utils/uploadToPinata";
+import { uploadFileAndMetadataToPinata } from "../utils/uploadToPinata";
 import { ethers, BrowserProvider } from "ethers";
 import NFTMinterABI from "../contracts/NFTminter.json";
 
@@ -21,7 +21,7 @@ const SellerPortal = () => {
     price: "",
     quantity: "",
   });
-
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -30,37 +30,53 @@ const SellerPortal = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
   const handleCreateListing = async () => {
     setLoading(true);
-
+  
     try {
-      // Step 1: Upload metadata to Pinata
+      if (!imageFile) {
+        alert("Please upload an image for the NFT.");
+        setLoading(false);
+        return;
+      }
+  
+      // Step 1: Create metadata
       const metadata = {
         name: formData.eventName,
         description: `Event at ${formData.location} on ${formData.date}`,
-        attributes: {
-          price: `${formData.price} ETH`,
-          quantity: formData.quantity,
-        },
+        attributes: [
+          { trait_type: "Price", value: `${formData.price} ETH` },
+          { trait_type: "Quantity", value: formData.quantity },
+        ],
       };
-
-      const metadataCID = await uploadMetadataToPinata(metadata);
-      const tokenURI = `https://gateway.pinata.cloud/ipfs/${metadataCID}`;
-
+  
+      // Step 2: Upload image and metadata to Pinata
+      const uploadResponse = await uploadFileAndMetadataToPinata(imageFile, metadata);
+      console.log("Uploaded to Pinata:", uploadResponse);
+  
+      // Extract CID from uploadResponse
+      const tokenURI = `https://gateway.pinata.cloud/ipfs/${uploadResponse}`;
+  
       if (!window.ethereum) {
         alert("MetaMask is not installed!");
         setLoading(false);
         return;
       }
-
-      const networkVersion = await window.ethereum.request({ method: 'net_version' });
+  
+      const networkVersion = await window.ethereum.request({ method: "net_version" });
       if (networkVersion !== "17000") {
         await window.ethereum.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: "0x4268" }], // Hexadecimal for Holesky (17000)
         });
       }
-      
+  
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner(0);
       const nftContract = new ethers.Contract(
@@ -68,20 +84,20 @@ const SellerPortal = () => {
         NFTMinterABI,
         signer
       );
-
+  
       const transaction = await nftContract.mintNFT(
         await signer.getAddress(),
         tokenURI
       );
       await transaction.wait();
-
+  
       const newTicket = {
         ...formData,
         id: tickets.length + 1,
         status: "Minted",
       };
       setTickets([...tickets, newTicket]);
-
+  
       setFormData({
         eventName: "",
         date: "",
@@ -89,16 +105,18 @@ const SellerPortal = () => {
         price: "",
         quantity: "",
       });
-
+      setImageFile(null);
+  
       alert("Ticket minted and listed successfully!");
     } catch (error) {
       console.error("Error minting ticket:", error);
       alert("Failed to mint the ticket. Check the console for details.");
     }
-
+  
     setLoading(false);
   };
-
+  
+  
   return (
     <div>
       <NavBar />
@@ -157,6 +175,14 @@ const SellerPortal = () => {
                   name="quantity"
                   value={formData.quantity}
                   onChange={handleInputChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Event Image</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
                 />
               </Form.Group>
               <Button
