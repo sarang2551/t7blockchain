@@ -1,54 +1,84 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import NavBar from "../component/NavigationBar";
 import SearchBar from "../component/SearchBar";
-import { Button, Card, Col, Row} from "react-bootstrap";
+import { Button, Card, Col, Row } from "react-bootstrap";
 import CarouselShow from "../component/CarouselShow";
-import MarketplaceJSON from "../utils/Marketplace.json"
+import MarketplaceJSON from "../utils/Marketplace.json";
+import MarketplaceABI from "../utils/MarketplaceABI.json";
 import { GetIpfsUrlFromPinata } from "../utils/pinata";
-import axios from "axios"
-import {ethers} from "ethers"
+import axios from "axios";
+import { ethers } from "ethers";
 import { NFT } from "../interfaces/INFT";
 
 const DashboardView = () => {
-  const [data, updateData] = useState<NFT[]>([]);
-  const [dataFetched, updateFetched] = useState(false);
-  async function getAllNFTs() {
-    //After adding your Hardhat network to your metamask, this code will get providers and signers
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    //Pull the deployed contract instance
-    let contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceJSON.abi, signer)
-    //create an NFT Token
-    let transaction = await contract.getAllNFTs()
+  const [data, setData] = useState<NFT[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    //Fetch all the details of every NFT from the contract and display
-    const items : NFT[] = await Promise.all(transaction.map(async (i:NFT) => {
-        var tokenURI = await contract.tokenURI(i.tokenId);
-        console.log("getting this tokenUri", tokenURI);
-        tokenURI = GetIpfsUrlFromPinata(tokenURI);
-        let meta : any = await axios.get(tokenURI);
-        meta = meta.data;
+  const getAllNFTs = async () => {
+    try {
+      if (!window.ethereum) {
+        alert("MetaMask is not installed!");
+        return;
+      }
 
-        let price = ethers.formatUnits(i.price.toString(), 'ether');
-        let item = {
-            price,
-            tokenId: i.tokenId,
-            seller: i.seller,
-            owner: i.owner,
-            image: meta.image,
-            name: meta.name,
-            description: meta.description,
-        }
-        return item;
-    }))
+      const networkVersion = await window.ethereum.request({ method: "net_version" });
+      if (networkVersion !== "17000") {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x4268" }], // Hexadecimal for Holesky (17000)
+        });
+      }
 
-    updateFetched(true);
-    updateData(items);
-  }
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
-  useEffect(()=>{
-    getAllNFTs()
-  },[dataFetched])
+      // Pull the deployed contract instance
+      const contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceABI, signer);
+
+      // Fetch all NFTs from the contract
+      const transaction = await contract.getAllNFTs();
+
+      // Fetch all details of every NFT from the contract and prepare the data
+      const items: NFT[] = await Promise.all(
+        transaction.map(async (i: NFT) => {
+          try {
+            let tokenURI = await contract.tokenURI(i.tokenId);
+            tokenURI = GetIpfsUrlFromPinata(tokenURI);
+
+            const meta = await axios.get(tokenURI).then((response) => response.data);
+
+            const price = ethers.formatUnits(i.price.toString(), "ether");
+
+            return {
+              price,
+              tokenId: i.tokenId,
+              seller: i.seller,
+              owner: i.owner,
+              image: meta.image,
+              name: meta.name,
+              description: meta.description,
+            };
+          } catch (error) {
+            console.error(`Error fetching metadata for tokenId ${i.tokenId}:`, error);
+            return null; // Skip this NFT if there's an issue
+          }
+        })
+      );
+
+      // Filter out any null items
+      setData(items.filter((item) => item !== null));
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching NFTs:", error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (loading) {
+      getAllNFTs();
+    }
+  }, [loading]);
 
   return (
     <div>
@@ -56,19 +86,23 @@ const DashboardView = () => {
         <NavBar />
       </Row>
       <Row className="mt-4" md={12}>
-        <Col className="mx-auto" md={6} >
+        <Col className="mx-auto" md={6}>
           <SearchBar />
         </Col>
       </Row>
       <Row md={12} className="mt-4 d-flex align-items-center">
-        {/* <Col md={{offset:2,span:3}} >
-        <Card>
-            <Card.Header>Concert</Card.Header>
-            <Card.Body><Button variant="dark">Buy Tickets!</Button></Card.Body>
-        </Card>
-        </Col> */}
         <Col md={6}>
-        <CarouselShow nftList={data}/>
+          {loading ? (
+            <div className="text-center">
+              <p>Loading NFTs...</p>
+            </div>
+          ) : data.length > 0 ? (
+            <CarouselShow nftList={data} />
+          ) : (
+            <div className="text-center">
+              <p>No NFTs available.</p>
+            </div>
+          )}
         </Col>
       </Row>
     </div>

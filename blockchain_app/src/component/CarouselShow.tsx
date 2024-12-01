@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Col, Row, Carousel, Image, Button } from "react-bootstrap";
 import { CarouselProps } from "../interfaces/ICarousel";
+import { NFT } from "../interfaces/INFT";
+import {useNavigate} from 'react-router-dom'
 const PartyTimeImage = require("../assets/partyTime.jpg");
 const ImagineDragons = require("../assets/imagine_dragons.jpg")
-import {useNavigate} from 'react-router-dom'
 
 const CarouselShow = (props:CarouselProps) => {
     const {nftList} = props

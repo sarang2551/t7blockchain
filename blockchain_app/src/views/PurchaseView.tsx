@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {useParams} from 'react-router-dom'
 import { GetIpfsUrlFromPinata } from "../utils/pinata";
 import MarketplaceJSON from "../utils/Marketplace.json";
+import MarketplaceABI from "../utils/MarketplaceABI.json";
 import axios from "axios";
 import {ethers} from 'ethers'
 import { NFT } from "../interfaces/INFT";
@@ -16,12 +17,24 @@ const PurchaseView = ()=>{
     const [currAddress, updateCurrAddress] = useState("0x");
 
     async function getNFTData(tokenId:number) {
-        //After adding your Hardhat network to your metamask, this code will get providers and signers
+        if (!window.ethereum) {
+            alert("MetaMask is not installed!");
+            return;
+          }
+      
+          const networkVersion = await window.ethereum.request({ method: "net_version" });
+          if (networkVersion !== "17000") {
+            await window.ethereum.request({
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: "0x4268" }], // Hexadecimal for Holesky (17000)
+            });
+          }      
+
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const addr = await signer.getAddress();
         //Pull the deployed contract instance
-        let contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceJSON.abi, signer)
+        let contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceABI, signer)
         //create an NFT Token
         var tokenURI = await contract.tokenURI(tokenId); // from an id to uri mapping
         const listedToken:NFT = await contract.getListedTokenForId(tokenId);
@@ -49,12 +62,24 @@ const PurchaseView = ()=>{
 
     async function buyNFT(tokenId:string) {
         try {
-            //After adding your Hardhat network to your metamask, this code will get providers and signers
+            if (!window.ethereum) {
+                alert("MetaMask is not installed!");
+                return;
+              }
+          
+              const networkVersion = await window.ethereum.request({ method: "net_version" });
+              if (networkVersion !== "17000") {
+                await window.ethereum.request({
+                  method: "wallet_switchEthereumChain",
+                  params: [{ chainId: "0x4268" }], // Hexadecimal for Holesky (17000)
+                });
+              }
+          
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner();
     
             //Pull the deployed contract instance
-            let contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceJSON.abi, signer);
+            let contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceABI, signer);
             const ticketPrice = data?.price ? data.price.toString() : "0"; 
             const salePrice = ethers.parseUnits(ticketPrice, 'ether')
             updateMessage("Buying the NFT... Please Wait (Upto 5 mins)")
