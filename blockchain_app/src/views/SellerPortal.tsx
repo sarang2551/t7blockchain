@@ -11,7 +11,7 @@ import {
 } from "react-bootstrap";
 import { uploadFileAndMetadataToPinata } from "../utils/uploadToPinata";
 import { ethers, BrowserProvider } from "ethers";
-import NFTMinterABI from "../contracts/NFTminter.json";
+import MarketplaceData from "../contracts/MarketPlace.json";
 
 const SellerPortal = () => {
   const [formData, setFormData] = useState({
@@ -61,7 +61,7 @@ const SellerPortal = () => {
       console.log("Uploaded to Pinata:", uploadResponse);
   
       // Extract CID from uploadResponse
-      const tokenURI = `https://gateway.pinata.cloud/ipfs/${uploadResponse}`;
+      const tokenURI = `https://gateway.pinata.cloud/ipfs/${uploadResponse.IpfsHash}`;
   
       if (!window.ethereum) {
         alert("MetaMask is not installed!");
@@ -80,14 +80,17 @@ const SellerPortal = () => {
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner(0);
       const nftContract = new ethers.Contract(
-        "0x3F63A00116bFDA640986f868F93cf3be094045e4",
-        NFTMinterABI,
+        MarketplaceData.address,
+        MarketplaceData.abi,
         signer
       );
   
-      const transaction = await nftContract.mintNFT(
-        await signer.getAddress(),
-        tokenURI
+      // Call createToken on the contract
+      const transaction = await nftContract.createToken(
+        tokenURI,
+        ethers.parseEther(formData.price), // Convert price to wei
+        formData.eventName,
+        `Event at ${formData.location} on ${formData.date}`
       );
       await transaction.wait();
   
@@ -115,7 +118,7 @@ const SellerPortal = () => {
   
     setLoading(false);
   };
-  
+    
   
   return (
     <div>

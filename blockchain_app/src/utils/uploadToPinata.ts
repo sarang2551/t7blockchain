@@ -17,7 +17,10 @@ interface Metadata {
 }
 
 
-export const uploadFileAndMetadataToPinata = async (file: File, metadata: Metadata) => {
+export const uploadFileAndMetadataToPinata = async (
+  file: File,
+  metadata: Metadata
+) => {
   if (!file) {
     throw new Error("No file provided for upload.");
   }
@@ -29,20 +32,22 @@ export const uploadFileAndMetadataToPinata = async (file: File, metadata: Metada
   try {
     console.log("Uploading file to Pinata...");
 
+    // Flatten metadata for keyValues
     const flattenedMetadata = {
       name: metadata.name,
       description: metadata.description,
-      price: metadata.attributes[0].value,
-      quantity: metadata.attributes[1].value,
+      price: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Price")?.value,
+      quantity: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Quantity")?.value,
     };
 
+    // Upload file to Pinata with metadata
     const upload = await pinata.upload.file(file).addMetadata({
       name: metadata.name,
       keyValues: flattenedMetadata,
     });
 
     console.log("Upload successful:", upload);
-    return upload; 
+    return upload; // Returns upload response
   } catch (error) {
     console.error("Error uploading file and metadata to Pinata:", error);
     throw error;
