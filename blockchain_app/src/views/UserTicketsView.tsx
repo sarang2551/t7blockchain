@@ -43,6 +43,11 @@ const MyTickets = () => {
       for (const tokenId of tokenIds) {
         try {
           const tokenURI = await contract.tokenURI(tokenId);
+          const tokenDetails = await contract.getTokenDetails(tokenId);
+
+          if (tokenDetails.owner.toLowerCase() !== userAddress.toLowerCase()) {
+            continue;
+          }
 
           // Extract CID from the tokenURI (e.g., ipfs://<CID>)
           const cid = tokenURI.replace("ipfs://", "");
@@ -57,7 +62,7 @@ const MyTickets = () => {
               tokenId,
               owner: userAddress,
               image: metadata.image,
-              name: `${eventName} #${eventCounter[eventName]}`, // Add indicator
+              name: `${eventName} #${eventCounter[eventName]}`,
               description: metadata.keyValues.description || "No description provided",
               price: metadata.keyValues.price || "0",
               seller: userAddress,
