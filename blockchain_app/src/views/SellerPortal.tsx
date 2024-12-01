@@ -61,7 +61,7 @@ const SellerPortal = () => {
       console.log("Uploaded to Pinata:", uploadResponse);
   
       // Extract CID from uploadResponse
-      const tokenURI = `https://gateway.pinata.cloud/ipfs/${uploadResponse.IpfsHash}`;
+      const tokenURI = `ipfs://${uploadResponse.IpfsHash}`;
   
       if (!window.ethereum) {
         alert("MetaMask is not installed!");
