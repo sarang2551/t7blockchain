@@ -7,4 +7,6 @@ export interface NFT {
     image?:string
     name:string
     description?:string
+    eventDate:string
+    location:string
 }

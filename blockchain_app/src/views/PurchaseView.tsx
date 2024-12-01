@@ -50,7 +50,9 @@ const PurchaseView = ()=>{
             image: meta.image,
             name: listedToken.name,
             description: listedToken.description,
-            currentlyListed: listedToken.currentlyListed
+            currentlyListed: listedToken.currentlyListed,
+            eventDate: listedToken.eventDate,
+            location: listedToken.location
         }
         console.log(item);
         updateData(item);

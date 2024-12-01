@@ -61,6 +61,8 @@ const MyTickets = () => {
               description: metadata.keyValues.description || "No description provided",
               price: metadata.keyValues.price || "0",
               seller: userAddress,
+              eventDate: metadata.keyValues.date,
+              location: metadata.keyValues.location,
               currentlyListed: await contract.getTokenDetails(tokenId).then((t) => t.currentlyListed),
             });
           } else {
