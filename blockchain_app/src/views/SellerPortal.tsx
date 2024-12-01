@@ -46,13 +46,21 @@ const SellerPortal = () => {
         return;
       }
   
+      if (!formData.quantity || parseInt(formData.quantity) <= 0) {
+        alert("Quantity must be greater than 0.");
+        setLoading(false);
+        return;
+      }
+  
       // Step 1: Create metadata
       const metadata = {
         name: formData.eventName,
         description: `Event at ${formData.location} on ${formData.date}`,
         attributes: [
-          { trait_type: "Price", value: `${formData.price} ETH` },
+          { trait_type: "Price", value: ethers.parseEther(formData.price).toString() }, // Price in Wei
           { trait_type: "Quantity", value: formData.quantity },
+          { trait_type: "Date", value: formData.date },
+          { trait_type: "Location", value: formData.location },
         ],
       };
   
@@ -85,21 +93,22 @@ const SellerPortal = () => {
         signer
       );
   
-      // Call createToken on the contract
-      const transaction = await nftContract.createToken(
+      // Call mintBatch on the contract
+      const transaction = await nftContract.mintBatch(
         tokenURI,
-        ethers.parseEther(formData.price), // Convert price to wei
+        ethers.parseEther(formData.price), // Price in Wei
         formData.eventName,
-        `Event at ${formData.location} on ${formData.date}`
+        `Event at ${formData.location} on ${formData.date}`,
+        parseInt(formData.quantity) // Quantity to mint
       );
       await transaction.wait();
   
-      const newTicket = {
+      const newTickets = Array.from({ length: parseInt(formData.quantity) }, (_, index) => ({
         ...formData,
-        id: tickets.length + 1,
+        id: tickets.length + index + 1,
         status: "Minted",
-      };
-      setTickets([...tickets, newTicket]);
+      }));
+      setTickets([...tickets, ...newTickets]);
   
       setFormData({
         eventName: "",
@@ -110,15 +119,16 @@ const SellerPortal = () => {
       });
       setImageFile(null);
   
-      alert("Ticket minted and listed successfully!");
+      alert(`${formData.quantity} ticket${parseInt(formData.quantity) > 1 ? 's' : ''} minted successfully!`);
     } catch (error) {
-      console.error("Error minting ticket:", error);
-      alert("Failed to mint the ticket. Check the console for details.");
+      console.error("Error minting tickets:", error);
+      alert("Failed to mint the tickets. Check the console for details.");
     }
   
     setLoading(false);
   };
-    
+  
+      
   
   return (
     <div>

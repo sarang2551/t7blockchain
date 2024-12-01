@@ -1,5 +1,5 @@
 {
-    "address": "0x2C79cc0d01b508Ff7462FeeC64824A5fF2046922",
+    "address": "0x9ca1cC031dF9266CA2b53555c30575325c2aB966",
     "abi": [
         {
             "inputs": [],
@@ -312,40 +312,6 @@
         {
             "inputs": [
                 {
-                    "internalType": "string",
-                    "name": "tokenURI",
-                    "type": "string"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "price",
-                    "type": "uint256"
-                },
-                {
-                    "internalType": "string",
-                    "name": "name",
-                    "type": "string"
-                },
-                {
-                    "internalType": "string",
-                    "name": "description",
-                    "type": "string"
-                }
-            ],
-            "name": "createToken",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
                     "internalType": "uint256",
                     "name": "tokenId",
                     "type": "uint256"
@@ -573,6 +539,39 @@
             "name": "listToken",
             "outputs": [],
             "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "tokenURI",
+                    "type": "string"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "price",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "string",
+                    "name": "name",
+                    "type": "string"
+                },
+                {
+                    "internalType": "string",
+                    "name": "description",
+                    "type": "string"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "quantity",
+                    "type": "uint256"
+                }
+            ],
+            "name": "mintBatch",
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "type": "function"
         },
         {

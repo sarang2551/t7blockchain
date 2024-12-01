@@ -38,6 +38,8 @@ export const uploadFileAndMetadataToPinata = async (
       description: metadata.description,
       price: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Price")?.value,
       quantity: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Quantity")?.value,
+      date: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Date")?.value,
+      location: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Location")?.value,
     };
 
     // Upload file to Pinata with metadata
