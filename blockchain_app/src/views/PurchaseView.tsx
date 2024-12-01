@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {useParams} from 'react-router-dom'
 import { GetIpfsUrlFromPinata } from "../utils/pinata";
-import MarketplaceJSON from "../utils/Marketplace.json";
-import MarketplaceABI from "../utils/MarketplaceABI.json";
+import MarketplaceData from "../utils/Marketplace.json";
 import axios from "axios";
 import {ethers} from 'ethers'
 import { NFT } from "../interfaces/INFT";
@@ -34,7 +33,7 @@ const PurchaseView = ()=>{
         const signer = await provider.getSigner();
         const addr = await signer.getAddress();
         //Pull the deployed contract instance
-        let contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceABI, signer)
+        let contract = new ethers.Contract(MarketplaceData.address, MarketplaceData.abi, signer)
         //create an NFT Token
         var tokenURI = await contract.tokenURI(tokenId); // from an id to uri mapping
         const listedToken:NFT = await contract.getListedTokenForId(tokenId);
@@ -79,7 +78,7 @@ const PurchaseView = ()=>{
             const signer = await provider.getSigner();
     
             //Pull the deployed contract instance
-            let contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceABI, signer);
+            let contract = new ethers.Contract(MarketplaceData.address, MarketplaceData.abi, signer);
             const ticketPrice = data?.price ? data.price.toString() : "0"; 
             const salePrice = ethers.parseUnits(ticketPrice, 'ether')
             updateMessage("Buying the NFT... Please Wait (Upto 5 mins)")
