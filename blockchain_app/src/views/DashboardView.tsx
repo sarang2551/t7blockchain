@@ -50,7 +50,7 @@ const DashboardView = () => {
               return {
                 price,
                 tokenId: i.tokenId,
-                seller: i.seller,
+                seller: i.seller === i.owner ? "Organizer" : i.seller,
                 owner: i.owner,
                 image: meta?.image?.startsWith("ipfs://")
                   ? `https://gateway.pinata.cloud/ipfs/${meta.image.replace("ipfs://", "")}`
