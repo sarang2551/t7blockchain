@@ -6,6 +6,7 @@
 /blockchain_app/.pnp
 /blockchain_app/.pnp.js
 /backend/.env
+.env
 
 # testing
 /blockchain_app/coverage
