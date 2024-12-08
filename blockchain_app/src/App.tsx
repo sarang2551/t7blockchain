@@ -4,11 +4,11 @@ import DashboardView from "./views/DashboardView";
 import SellerPortal from "./views/SellerPortal";
 import Profile from "./views/Profile";
 import EventView from "./views/EventView";
-
+import {ContractProvider} from "./component/ContractContext"
 
 function App() {
   return (
-    
+    <ContractProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<DashboardView />} />
@@ -17,7 +17,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
     </Routes>
     </BrowserRouter>
-    
+    </ContractProvider>
   );
 }
 

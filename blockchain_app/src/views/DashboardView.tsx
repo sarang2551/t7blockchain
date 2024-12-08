@@ -7,29 +7,25 @@ import MarketplaceData from "../contracts/MarketPlace.json"
 import {ethers,BrowserProvider} from 'ethers'
 import {getNFTMetadata} from "../utils/pinata"
 import { ListedToken } from "../interfaces/ListedToken";
+import { useContract } from "../component/ContractContext";
 
 const DashboardView = () => {
   // get all the NFT tickets from the smart contract
   const [NFTList,setNFTList] = useState<ListedToken[]>([])
+  const { nftContract, signer, initializeContract } = useContract();
   const fetchAllListedNFT = async() => {
-    const provider = window.ethereum ? new BrowserProvider(window.ethereum) : null;
-    if(!provider){
-      alert("Meta mask has not been installed!")
-      return
+    if (!nftContract) {
+      console.log("Contract not initialized yet. Initializing...");
+      await initializeContract();
+      return;
     }
-    const signer = await provider.getSigner();
-    const nftContract = new ethers.Contract(
-      MarketplaceData.address,
-      MarketplaceData.abi,
-      signer
-    );
     const allListedNFTs = await nftContract.getAllNFTs()
     // TODO: Add loading component logic
       const parsedNFTs = await Promise.all(
-        allListedNFTs.map(async (nft:any) => {
+        allListedNFTs?.map(async (nft:any) => {
           try {
             // Fetch token URI for metadata
-            const tokenURI = await nftContract.tokenURI(nft.tokenId);
+            const tokenURI = await nftContract?.tokenURI(nft.tokenId);
             
             // Fetch off-chain metadata using the tokenURI
             const metadataResult = await getNFTMetadata(tokenURI.replace("ipfs://", ""));
@@ -58,13 +54,14 @@ const DashboardView = () => {
           }
         })
       );
+      console.log("Parsed NFTS in dashboard")
       console.log(parsedNFTs)
       // Filter out null values in case of errors
       return parsedNFTs.filter((nft) => nft !== null);
   }
   useEffect(()=>{
     fetchAllListedNFT().then((res:any)=>setNFTList(res)) //TODO: Create a NFT Class
-  },[])
+  },[nftContract])
   return (
     <div>
       <Row>

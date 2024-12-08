@@ -12,7 +12,6 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
     Counters.Counter private _itemsSold;
 
     address payable owner;
-    uint256 public listPrice = 0.01 ether;
 
     struct ListedToken {
         uint256 tokenId;
@@ -37,18 +36,10 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
     );
 
     event TokenDelisted(uint256 indexed tokenId, address seller);
+    event TokenBought(uint256 indexed tokenId);
 
     constructor() ERC721("NFTMarketplace", "NFTM") {
         owner = payable(msg.sender);
-    }
-
-    function updateListPrice(uint256 _listPrice) public payable {
-        require(owner == msg.sender, "Only owner can update listing price");
-        listPrice = _listPrice;
-    }
-
-    function getListPrice() public view returns (uint256) {
-        return listPrice;
     }
 
     function mintBatch(
@@ -87,7 +78,6 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
     function listToken(uint256 tokenId, uint256 price) public payable nonReentrant {
         require(msg.sender == ownerOf(tokenId), "Only the owner can list the NFT");
         require(price > 0, "Price must be greater than zero");
-        require(msg.value == listPrice, "Must pay the listing fee");
 
         ListedToken storage token = idToListedToken[tokenId];
         require(!token.currentlyListed, "Token is already listed.");
@@ -121,9 +111,9 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
         _itemsSold.increment();
         _transfer(address(this), msg.sender, tokenId);
 
-        // Pay seller and marketplace owner
-        payable(owner).transfer(listPrice);
-        payable(seller).transfer(msg.value - listPrice);
+        // Pay seller
+        payable(seller).transfer(msg.value);
+        emit TokenBought(tokenId);
     }
 
     function getOwnedTokens(address _owner) public view returns (uint256[] memory) {

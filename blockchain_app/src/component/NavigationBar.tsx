@@ -151,10 +151,10 @@ const NavBar = () => {
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="me-auto"></Nav>
           <Nav>
-            <Nav.Link href="#features">Explore</Nav.Link>
+            <Nav.Link href="/">Explore</Nav.Link>
             <Nav.Link href="/sell">Sell</Nav.Link>
-            <Nav.Link href="#myTickets">My Tickets</Nav.Link>
-            <Nav.Link href="#Profile">Profile</Nav.Link>
+            <Nav.Link href="/myTickets">My Tickets</Nav.Link>
+            <Nav.Link href="/profile">Profile</Nav.Link>
 
             {/* Wallet Connection Link */}
             <Nav.Link

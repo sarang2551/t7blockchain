@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ICarousel } from "../interfaces/ICarousel";
 
 const CarouselShow = ({ listedTokens }: ICarousel) => {
-  const navigate = useNavigate(); // Initialize the navigate function
+  const navigate = useNavigate(); 
 
   const handleGetTickets = (tokenId: number) => {
     navigate(`/event/${tokenId}`); // Navigate to the event page with tokenId
@@ -12,7 +12,7 @@ const CarouselShow = ({ listedTokens }: ICarousel) => {
 
   return (
     <Carousel variant="dark" interval={2000}>
-      {listedTokens.map((token) => (
+      {listedTokens?.map((token) => (
         <Carousel.Item key={token.id}>
           <Image
             style={{ borderRadius: 25 }}
