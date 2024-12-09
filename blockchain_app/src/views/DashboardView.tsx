@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import NavBar from "../component/NavigationBar";
 import SearchBar from "../component/SearchBar";
 import { Button, Card, Col, Row, Spinner, Container, Badge } from "react-bootstrap";

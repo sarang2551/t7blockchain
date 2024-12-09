@@ -1,5 +1,5 @@
-import { NFT } from "../interfaces/INFT";
+import {ListedToken} from "./ListedToken"
 
-export interface CarouselProps {
-    nftList:NFT[]
+export interface ICarousel {
+    listedTokens: ListedToken[]
 }

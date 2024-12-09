@@ -1,38 +1,46 @@
-import React, { useState } from "react";
-import { Col, Row, Carousel, Image, Button } from "react-bootstrap";
-import { CarouselProps } from "../interfaces/ICarousel";
-import { NFT } from "../interfaces/INFT";
-import {useNavigate} from 'react-router-dom'
-const PartyTimeImage = require("../assets/partyTime.jpg");
-const ImagineDragons = require("../assets/imagine_dragons.jpg")
+import React from "react";
+import { Carousel, Image, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { ICarousel } from "../interfaces/ICarousel";
 
-const CarouselShow = (props:CarouselProps) => {
-    const {nftList} = props
-    const navigate = useNavigate();
-    const navigateToPurchasePage = (id:number) => {
-      navigate(`/purchase/${id}`)
-    }
-    return ( 
+const CarouselShow = ({ listedTokens }: ICarousel) => {
+  const navigate = useNavigate(); 
+
+  const handleGetTickets = (tokenId: number) => {
+    navigate(`/event/${tokenId}`); // Navigate to the event page with tokenId
+  };
+
+  return (
     <Carousel variant="dark" interval={2000}>
-      {nftList.map((item: NFT) => (
-        <Carousel.Item key={item.tokenId}> 
+      {listedTokens?.map((token) => (
+        <Carousel.Item key={token.id}>
           <Image
             style={{ borderRadius: 25 }}
-            src={item.image}  
-            alt="NFT Image"
+            src={token.image}
+            alt={`${token.eventName} slide`}
             width={840}
             height={540}
-            onClick={()=>navigateToPurchasePage(item.tokenId)}
           />
           <Carousel.Caption>
-            <h3>{item.name}</h3>
-            <p>{item.description?item.description:"No description"}</p>
-            <Button variant="primary">Get Tickets</Button>
+            <h3>{token.eventName}</h3>
+            <p>{token.description}</p>
+            <p>
+              <strong>Date:</strong> {token.date} | <strong>Location:</strong> {token.location}
+            </p>
+            <p>
+              <strong>Price:</strong> {token.price} ETH
+            </p>
+            <Button
+              variant="primary"
+              onClick={() => handleGetTickets(token.id)} // Pass tokenId to the handler
+            >
+              Get Tickets
+            </Button>
           </Carousel.Caption>
         </Carousel.Item>
       ))}
     </Carousel>
-    )
-}
+  );
+};
 
 export default CarouselShow;
