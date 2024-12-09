@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { ethers, BrowserProvider, Contract } from "ethers";
-import MarketplaceData from "../contracts/MarketPlace.json";
+import MarketplaceData from "../utils/Marketplace.json";
 
 interface ContractContextProps {
   nftContract: Contract | null;

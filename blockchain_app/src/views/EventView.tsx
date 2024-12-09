@@ -1,7 +1,7 @@
 import React, { useEffect,useState } from "react";
 import {useParams} from 'react-router-dom'
 import { ListedToken } from "../interfaces/ListedToken";
-import MarketplaceData from "../contracts/MarketPlace.json"
+import MarketplaceData from "../utils/Marketplace.json";
 import {ethers,BrowserProvider} from "ethers"
 import {getNFTMetadata} from "../utils/pinata"
 import {Card, Button,Container,Row,Col,Spinner} from 'react-bootstrap'

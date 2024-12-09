@@ -13,7 +13,7 @@ import {
 import { uploadFileAndMetadataToPinata } from "../utils/uploadToPinata";
 import { getNFTMetadata } from "../utils/pinata";
 import { ethers, BrowserProvider } from "ethers";
-import MarketplaceData from "../contracts/MarketPlace.json";
+import MarketplaceData from "../utils/Marketplace.json";
 
 const SellerPortal = () => {
   const [formData, setFormData] = useState({
