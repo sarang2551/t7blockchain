@@ -55,3 +55,47 @@ export const uploadFileAndMetadataToPinata = async (
     throw error;
   }
 };
+
+
+/**
+ * Update metadata for an existing file on Pinata
+ * @param {string} cid - The CID of the existing file to update
+ * @param {Metadata} metadata - Updated metadata to associate with the file
+ * @returns {Promise<Object>} - The response from Pinata after updating metadata
+ */
+export const updateMetadataOnPinata = async (cid: string, metadata: Metadata) => {
+  if (!cid) {
+    throw new Error("No CID provided for metadata update.");
+  }
+
+  if (!metadata) {
+    throw new Error("No metadata provided for update.");
+  }
+
+  try {
+    console.log("Updating metadata on Pinata...");
+
+    // Flatten metadata for keyValues
+    const flattenedMetadata = {
+      name: metadata.name,
+      description: metadata.description,
+      price: metadata.attributes?.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Price")?.value,
+      quantity: metadata.attributes?.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Quantity")?.value,
+      date: metadata.attributes?.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Date")?.value,
+      location: metadata.attributes?.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Location")?.value,
+    };
+
+    // Call Pinata's updateMetadata function
+    const update = await pinata.updateMetadata({
+      cid,
+      name: metadata.name,
+      keyValues: flattenedMetadata,
+    });
+
+    console.log("Metadata updated successfully:", update);
+    return update; // Return the update response
+  } catch (error) {
+    console.error("Error updating metadata on Pinata:", error);
+    throw error;
+  }
+};

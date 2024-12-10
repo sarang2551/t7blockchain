@@ -90,6 +90,13 @@ const DashboardView = () => {
         return;
       }
 
+      // Validate and parse price
+      if (isNaN(price) || price <= 0) {
+        alert("Invalid price detected. Cannot proceed.");
+        setBuying(null);
+        return;
+      }
+
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
