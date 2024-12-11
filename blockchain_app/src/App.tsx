@@ -7,6 +7,7 @@ import EventView from "./views/EventView";
 import {ContractProvider} from "./component/ContractContext"
 import PurchaseView from './views/PurchaseView';
 import UserTicketsView from './views/UserTicketsView';
+import AdminPage from './views/AdminPage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path='/purchase/:id' element={<PurchaseView/>}/>
         <Route path='/mytickets' element={<UserTicketsView/>}/>
+        <Route path='/admin' element={<AdminPage/>}/>
 
     </Routes>
     </BrowserRouter>

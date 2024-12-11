@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { Navbar, Container, Nav } from "react-bootstrap";
-import { BrowserProvider } from "ethers";
+import { Navbar, Container, Nav, Spinner } from "react-bootstrap";
+import { ethers, BrowserProvider } from "ethers";
+import MarketplaceData from "../utils/Marketplace.json";
 
 const NavBar = () => {
-  const [connected, setConnected] = useState(false); // Tracks connection status
+  const [connected, setConnected] = useState(false); // Tracks wallet connection status
   const [walletAddress, setWalletAddress] = useState(""); // Stores connected wallet address
+  const [isOwner, setIsOwner] = useState(false); // Checks if the wallet is the contract owner
+  const [loading, setLoading] = useState(true); // Tracks owner-check loading state
 
-  // Function to connect/disconnect the wallet
+  // Function to connect the wallet
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
@@ -14,41 +17,72 @@ const NavBar = () => {
         return;
       }
 
-      const provider = new BrowserProvider(window.ethereum); // Create a provider
-      const signer = await provider.getSigner(); // Get the signer from MetaMask
-      const address = await signer.getAddress(); // Fetch wallet address
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
 
-      // Update the state with the wallet address
       setWalletAddress(address);
       setConnected(true);
-      console.log("Connected Wallet Address:", address); // Debugging log
+      console.log("Connected Wallet Address:", address);
+      await checkOwner(address); // Check if connected wallet is the owner
     } catch (error) {
       console.error("Error connecting wallet:", error);
       alert("Failed to connect to wallet. Please try again.");
     }
   };
 
-  // Disconnect Wallet
+  // Disconnect the wallet
   const disconnectWallet = () => {
     setConnected(false);
     setWalletAddress("");
+    setIsOwner(false);
+  };
+
+  // Check if the connected wallet is the contract owner
+  const checkOwner = async (address: string) => {
+    try {
+      if (!window.ethereum) {
+        console.error("MetaMask not found!");
+        return;
+      }
+
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(
+        MarketplaceData.address,
+        MarketplaceData.abi,
+        signer
+      );
+
+      const ownerAddress = await contract.owner();
+      console.log("Owner Address:", ownerAddress);
+      setIsOwner(address.toLowerCase() === ownerAddress.toLowerCase());
+    } catch (error) {
+      console.error("Error checking owner:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    // Check if the wallet is already connected when the component loads
     const checkConnection = async () => {
       try {
         if (window.ethereum) {
-          const provider = new BrowserProvider(window.ethereum); // Create a provider
-          const accounts = await provider.listAccounts(); // Fetch the list of connected accounts
+          const provider = new BrowserProvider(window.ethereum);
+          const accounts = await provider.listAccounts();
+
           if (accounts.length > 0) {
-            setWalletAddress(String(accounts[0].address)); // Use the first connected account
+            const address = String(accounts[0].address);
+            setWalletAddress(address);
             setConnected(true);
-            console.log("Previously Connected Wallet Address:", accounts[0].address); // Debugging log
+            console.log("Previously Connected Wallet Address:", address);
+            await checkOwner(address);
           }
         }
       } catch (error) {
         console.error("Error checking wallet connection:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -70,7 +104,10 @@ const NavBar = () => {
             <Nav.Link href="/myTickets">My Tickets</Nav.Link>
             <Nav.Link href="#Profile">Profile</Nav.Link>
 
-            {/* Wallet Connection Link */}
+            {!loading && isOwner && (
+              <Nav.Link href="/admin">Admin</Nav.Link>
+            )}
+
             <Nav.Link
               onClick={connected ? disconnectWallet : connectWallet}
               className={`${
@@ -78,11 +115,13 @@ const NavBar = () => {
               } text-grey font-bold py-2 px-4 rounded-md cursor-pointer hover:bg-opacity-75`}
               style={{ textAlign: "center" }}
             >
-              {connected
-                ? `${walletAddress.toString().substring(0, 6)}...${walletAddress.toString().substring(
-                    walletAddress.length - 4
-                  )}`
-                : "Sign In"}
+              {connected ? (
+                `${walletAddress.substring(0, 6)}...${walletAddress.substring(
+                  walletAddress.length - 4
+                )}`
+              ) : (
+                "Sign In"
+              )}
             </Nav.Link>
           </Nav>
         </Navbar.Collapse>
