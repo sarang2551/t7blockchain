@@ -36,7 +36,7 @@ const SellerPortal = () => {
     eventName: "",
     date: "",
     location: "",
-    price: "",
+    maxPrice: "",
     quantity: "",
     description: "",
   });
@@ -50,7 +50,7 @@ const SellerPortal = () => {
     eventName: "",
     date: "",
     location: "",
-    price: "",
+    maxPrice: "",
     quantity: "",
     description: "",
   });
@@ -83,12 +83,18 @@ const SellerPortal = () => {
         setLoading(false);
         return;
       }
+      
+      if (!formData.maxPrice || parseFloat(formData.maxPrice) <= 0) {
+        alert("Max price must be greater than 0.");
+        setLoading(false);
+        return;
+      }  
 
       const metadata = {
         name: formData.eventName,
         description: formData.description,
         attributes: [
-          { trait_type: "Price", value: ethers.parseEther(formData.price).toString() },
+          { trait_type: "Max Price", value: ethers.parseEther(formData.maxPrice).toString() },
           { trait_type: "Quantity", value: formData.quantity },
           { trait_type: "Date", value: formData.date },
           { trait_type: "Location", value: formData.location },
@@ -124,7 +130,7 @@ const SellerPortal = () => {
 
       const transaction = await nftContract.mintBatch(
         tokenURI,
-        ethers.parseEther(formData.price),
+        ethers.parseEther(formData.maxPrice),
         formData.eventName,
         formData.description,
         parseInt(formData.quantity)
@@ -241,7 +247,7 @@ const SellerPortal = () => {
         setEditFormData({
           eventName: metadata.name || "",
           description: metadata.keyValues?.description || "",
-          price: ethers.formatUnits(tokenDetails.price, "ether"),
+          maxPrice: ethers.formatUnits(tokenDetails.price, "ether"),
           quantity: metadata.keyValues?.quantity || "",
           date: metadata.keyValues?.date || "",
           location: metadata.keyValues?.location || "",
@@ -279,7 +285,6 @@ const SellerPortal = () => {
     setEditLoading(true);
   
     try {
-
       if (!window.ethereum) {
         alert("MetaMask is not installed!");
         setEditLoading(false);
@@ -293,36 +298,40 @@ const SellerPortal = () => {
         MarketplaceData.abi,
         signer
       );
-
-       // Fetch the current metadata from Pinata
+  
+      // Fetch current metadata from Pinata
       const tokenURI = await contract.tokenURI(editingTicket.id);
-      const cid = tokenURI.replace("ipfs://","");
+      const cid = tokenURI.replace("ipfs://", "");
       const currentMetadataResult = await getNFTMetadata(cid);
-
+  
       if (!currentMetadataResult.success || !currentMetadataResult.metadata) {
         throw new Error("Failed to fetch existing metadata from Pinata.");
       }
-
+  
       const currentMetadata = currentMetadataResult.metadata;
-
-      // const updatedMetadata = {
-      //   name: editFormData.eventName,
-      //   description: editFormData.description,
-      //   attributes: [
-      //     { trait_type: "Price", value: ethers.parseEther(editFormData.price).toString() },
-      //     { trait_type: "Quantity", value: editFormData.quantity.toString() },
-      //     { trait_type: "Date", value: editFormData.date.toString },
-      //     { trait_type: "Location", value: editFormData.location.toString() },
-      //   ],
-      // };
-
+  
+      // Check if maxPrice is valid and update on-chain
+      if (editFormData.maxPrice && parseFloat(editFormData.maxPrice) > 0) {
+        const tx = await contract.updateMaxPrice(
+          editingTicket.id,
+          ethers.parseEther(editFormData.maxPrice)
+        );
+        await tx.wait();
+        console.log("Max price updated on blockchain.");
+      } else {
+        alert("Please enter a valid max price.");
+        setEditLoading(false);
+        return;
+      }
+  
+      // Update metadata for Pinata
       const updatedMetadata = {
         name: editFormData.eventName || currentMetadata.name,
         description: editFormData.description || currentMetadata.keyValues.description,
         attributes: [
           {
-            trait_type: "Price",
-            value: ethers.parseEther(editFormData.price || ethers.formatUnits(editingTicket.price, "ether")).toString(),
+            trait_type: "Max Price",
+            value: ethers.parseEther(editFormData.maxPrice).toString(),
           },
           {
             trait_type: "Quantity",
@@ -338,25 +347,12 @@ const SellerPortal = () => {
           },
         ],
       };
-      //console.log("Updated Metadata:", updatedMetadata);
-      
+  
       console.log("Updating metadata for CID:", cid);
-
+  
       // Update metadata on Pinata
       const updateResponse = await updateMetadataOnPinata(cid, updatedMetadata);
-      console.log("Metadata updated successfully:", updateResponse);
-
-
-      
-  
-      
-  
-      // Update metadata on the blockchain
-      //const transaction = await contract.updateTokenMetadata(
-      //  editingTicket.id, // Token ID
-      //  newTokenURI
-      //);
-      //await transaction.wait();
+      console.log("Metadata updated successfully on Pinata:", updateResponse);
   
       alert("Ticket updated successfully!");
       fetchMintedTickets(); // Refresh tickets
@@ -368,7 +364,7 @@ const SellerPortal = () => {
       setEditLoading(false);
     }
   };
-  
+    
   
 
   useEffect(() => {
@@ -426,14 +422,14 @@ const SellerPortal = () => {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Price (ETH)</Form.Label>
+                <Form.Label>Max Price (ETH)</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder="Enter price"
-                  name="price"
-                  value={formData.price}
+                  placeholder="Enter max price"
+                  name="maxPrice"
+                  value={formData.maxPrice}
                   onChange={handleInputChange}
-                />
+              />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Quantity</Form.Label>
