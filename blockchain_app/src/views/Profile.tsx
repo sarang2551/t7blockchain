@@ -1,8 +1,16 @@
-import React, { useState } from "react";
-import { BrowserProvider, formatEther } from "ethers";
-import { Button, Card } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { BrowserProvider, formatEther,ethers } from "ethers";
+import { Button, Card, Row, Spinner, Container, Col} from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import NavBar from "../component/NavigationBar";
+import {useContract} from "../component/ContractContext"
+import { ListedToken } from "../interfaces/ListedToken";
+import NFTCard from "../component/NFTCard";
+import {getNFTMetadata} from '../utils/pinata'
+import CalendarComponent from "../component/CalendarComponent";
+import { NFT } from "../interfaces/INFT";
 
+const avatar = "https://avatars.githubusercontent.com/u/59228569"
 
 
 const Profile: React.FC = () => {
@@ -15,23 +23,26 @@ const Profile: React.FC = () => {
     balance: null,
   });
   const [connected, setConnected] = useState(false);
-
+  const { nftContract, signer, initializeContract } = useContract();
+  const [myNFTs,setMyNFTs] = useState<NFT[]>([]);
+  const [loading,setLoading] = useState<boolean>(true)
   // Function to connect or disconnect the wallet
   const connectWallet = async () => {
     if (!connected) {
       try {
         // Connect the wallet using ethers.js
-        const provider = new BrowserProvider(window.ethereum!);
-        const signer = await provider.getSigner();
-        const _walletAddress = await signer.getAddress();
+        if(signer){
+          const _walletAddress = await signer.getAddress();
 
-        setData((prevData) => ({
-          ...prevData,
-          address: _walletAddress,
-        }));
+          setData((prevData) => ({
+            ...prevData,
+            address: _walletAddress,
+          }));
 
-        await getBalance(_walletAddress); // Fetch balance
-        setConnected(true);
+          await getBalance(_walletAddress); // Fetch balance
+          setConnected(true);
+        }
+        
       } catch (error) {
         console.error("Error connecting wallet:", error);
       }
@@ -61,12 +72,66 @@ const Profile: React.FC = () => {
     }
   };
 
+  const retrieveMyTokens = async():Promise<NFT[]|undefined> =>{
+      if(!nftContract){
+        await initializeContract();
+        return
+      }
+      const myNFTs = await nftContract.getMyNFTs();
+      const parsedNFTs : NFT[] = await Promise.all(
+        myNFTs?.map(async (nft:any) => {
+          try {
+            // Fetch token URI for metadata
+            const tokenURI = await nftContract?.tokenURI(nft.tokenId);
+            
+            // Fetch off-chain metadata using the tokenURI
+            const metadataResult = await getNFTMetadata(tokenURI.replace("ipfs://", ""));
+            const offchainmetadata = metadataResult.metadata;
+    
+            // Build the image URL from IPFS
+            const imageUrl = `https://gateway.pinata.cloud/ipfs/${tokenURI.replace("ipfs://", "")}`;
+    
+            return {
+              id: nft.tokenId.toString(),
+              eventName: offchainmetadata?.name,
+              description: offchainmetadata?.keyValues?.description || "No description available",
+              date: offchainmetadata?.keyValues?.date || "Unknown",
+              location: offchainmetadata?.keyValues?.location || "Unknown",
+              price: ethers.formatUnits(nft.price.toString(), "ether"),
+              image: imageUrl,
+              status: nft.currentlyListed
+                ? "Listed"
+                : nft.owner.toLowerCase() !== nft.seller.toLowerCase()
+                ? "Sold"
+                : "Unlisted",
+            };
+          } catch (error) {
+            console.error(`Failed to parse NFT with tokenId ${nft.tokenId}:`, error);
+            return null; // Return null or handle errors gracefully
+          }
+        }))
+
+        return parsedNFTs;
+
+    }
+
+  useEffect(()=>{
+      setLoading(true)
+      retrieveMyTokens().then((nfts:NFT[]|undefined)=>{nfts??setMyNFTs(nfts!)})
+      setLoading(false)
+  },[])
+
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      {/* Profile Card */}
+    <>
+    <NavBar/>
+    <Container fluid='md' style={{padding:0, marginTop:10}}>
+    {loading ? <><Spinner animation="border" variant="primary" />
+                  <p>Loading token details...</p></> : 
+    <><Row className="mb-4">
+      <Col>
       <Card style={{ width: "24rem" }} className="shadow">
-        <Card.Header className="text-center bg-primary text-white">
-          <h4>Profile</h4>
+        <Card.Header className="text-center text-white">
+          <img src={avatar} style={{width:200,height:200,borderRadius:"25%"}}/>
         </Card.Header>
         <Card.Body>
           <Card.Text>
@@ -82,7 +147,19 @@ const Profile: React.FC = () => {
           </Button>
         </Card.Body>
       </Card>
-    </div>
+      </Col>
+      <Col>
+      <CalendarComponent tokens={myNFTs}/>
+      </Col>
+      </Row>
+      <Row>
+        {myNFTs?myNFTs?.map((nft:NFT)=>
+          <NFTCard token={nft}/>
+        ) : <Col>No tickets owned</Col>}
+      </Row></>}
+    
+    </Container>
+    </>
   );
 };
 

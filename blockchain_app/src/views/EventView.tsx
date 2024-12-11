@@ -8,6 +8,7 @@ import {Card, Button,Container,Row,Col,Spinner} from 'react-bootstrap'
 import NavBar from "../component/NavigationBar";
 import {useContract} from "../component/ContractContext"
 import NFTCard from "../component/NFTCard";
+import { NFT } from "../interfaces/INFT";
 
 const EventView = () =>{
 
@@ -18,10 +19,10 @@ const EventView = () =>{
     }
     const { nftContract, signer, initializeContract } = useContract();
 
-    const [pageToken,setToken] = useState<ListedToken|undefined>();
+    const [pageToken,setToken] = useState<NFT|undefined>();
     const [loading, setLoading] = useState<boolean>(true);
 
-    const retrieveTokenDetails = async():Promise<ListedToken|undefined>=>{
+    const retrieveTokenDetails = async():Promise<NFT|undefined>=>{
         try{
           if (!nftContract) {
             console.log("Contract not initialized yet. Initializing...");
@@ -39,19 +40,17 @@ const EventView = () =>{
           const imageUrl = `https://gateway.pinata.cloud/ipfs/${tokenURI.replace("ipfs://", "")}`;
 
           // Populate and return the ListedToken object
-          const listedToken:ListedToken = {
-          id: tokenIdInt,
-          eventName: offchainmetadata?.name || "Unknown Event",
+          const listedToken:NFT = {
+          tokenId: tokenIdInt,
+          name: offchainmetadata?.name || "Unknown Event",
           description: offchainmetadata?.keyValues?.description || "No description available",
-          date: offchainmetadata?.keyValues?.date || "Unknown",
+          eventDate: offchainmetadata?.keyValues?.date || "Unknown",
           location: offchainmetadata?.keyValues?.location || "Unknown",
-          price: ethers.formatUnits(tokenDetails.price.toString(), "ether"),
+          price: tokenDetails.price.toString(),
           image: imageUrl,
-          status: tokenDetails.currentlyListed
-              ? "Listed"
-              : tokenDetails.owner.toLowerCase() !== tokenDetails.seller.toLowerCase()
-              ? "Sold"
-              : "Unlisted",
+          currentlyListed: tokenDetails.currentlyListed,
+          seller:tokenDetails.seller,
+          owner:tokenDetails.owner
           };
           return listedToken
         }catch(e:any){
@@ -69,7 +68,7 @@ const EventView = () =>{
     useEffect(()=>{
         if(tokenId){
             setLoading(true)
-            retrieveTokenDetails().then((nft:ListedToken|undefined)=>{setToken(nft)})
+            retrieveTokenDetails().then((nft:NFT|undefined)=>{setToken(nft)})
             setLoading(false)
         }else{
             alert("Page missing token Id!")

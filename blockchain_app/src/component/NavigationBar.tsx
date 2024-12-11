@@ -92,17 +92,17 @@ const NavBar = () => {
   return (
     <Navbar collapseOnSelect expand="lg" className="bg-body-tertiary">
       <Container>
-        <Navbar.Brand href="/" style={{ marginLeft: "80px" }}>
+        <Navbar.Brand href="/" style={{ marginLeft: "80px"}}>
           Ticket DApp
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="me-auto"></Nav>
           <Nav>
-            <Nav.Link href="#features">Explore</Nav.Link>
+            <Nav.Link href="/">Explore</Nav.Link>
             <Nav.Link href="/sell">Sell</Nav.Link>
             <Nav.Link href="/myTickets">My Tickets</Nav.Link>
-            <Nav.Link href="#Profile">Profile</Nav.Link>
+            <Nav.Link href="/profile">Profile</Nav.Link>
 
             {!loading && isOwner && (
               <Nav.Link href="/admin">Admin</Nav.Link>

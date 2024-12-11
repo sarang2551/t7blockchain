@@ -6,14 +6,14 @@ import ListedTokenCardProps from "../interfaces/IListedTokenCard"
 const NFTCard: React.FC<ListedTokenCardProps> = ({ token, onBuy }) => {
   return (
     <Card style={{ width: "18rem", marginBottom: "1rem" }}>
-      <Card.Img variant="top" src={token.image} alt={token.eventName} />
+      <Card.Img variant="top" src={token.image} alt={token.name} style={{ maxHeight: "150px" }}/>
       <Card.Body>
-        <Card.Title>{token.eventName}</Card.Title>
+        <Card.Title>{token.name}</Card.Title>
         <Card.Text>
           <strong>Description:</strong> {token.description}
         </Card.Text>
         <Card.Text>
-          <strong>Date:</strong> {token.date}
+          <strong>Date:</strong> {token.eventDate}
         </Card.Text>
         <Card.Text>
           <strong>Location:</strong> {token.location}
@@ -22,7 +22,7 @@ const NFTCard: React.FC<ListedTokenCardProps> = ({ token, onBuy }) => {
           <strong>Price:</strong> {token.price} ETH
         </Card.Text>
         <Card.Text>
-          <strong>Status:</strong> {token.status}
+          <strong>Status:</strong> {token.currentlyListed}
         </Card.Text>
         <Button variant="primary" onClick={onBuy}>
           Buy Token
