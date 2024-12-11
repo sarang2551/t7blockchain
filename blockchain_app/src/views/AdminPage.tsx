@@ -106,10 +106,14 @@ const AdminPage = () => {
 
       const currentWhitelist = await contract.getWhitelistedAddresses();
       setWhitelist(
-        currentWhitelist[0].map((addr: string, idx: number) => ({
-          address: addr,
-          label: currentWhitelist[1][idx],
-        }))
+        Array.from(
+          new Map(
+            currentWhitelist[0].map((addr: string, idx: number) => [
+              addr, // key
+              { address: addr, label: currentWhitelist[1][idx] }, // value
+            ])
+          ).values()
+        )
       );
 
       const currentAdmin = await contract.owner();
@@ -197,7 +201,7 @@ const AdminPage = () => {
                   </tr>
                 ) : (
                   whitelist.map((entry, index) => (
-                    <tr key={entry.address}>
+                    <tr key={`${entry.address}-${index}`}>
                       <td>{index + 1}</td>
                       <td>{entry.address}</td>
                       <td>{entry.label}</td>
