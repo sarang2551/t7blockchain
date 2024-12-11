@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
 import NavBar from "../component/NavigationBar";
-import { Col, Row, Card, Button, Container, Spinner } from "react-bootstrap";
+import {
+  Col,
+  Row,
+  Card,
+  Button,
+  Container,
+  Spinner,
+  Badge,
+} from "react-bootstrap";
 import MarketplaceData from "../utils/Marketplace.json";
 import { getNFTMetadata } from "../utils/pinata";
 import { ethers } from "ethers";
@@ -31,50 +39,61 @@ const MyTickets = () => {
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
 
-      const contractAddress = MarketplaceData.address;
-      const contract = new ethers.Contract(contractAddress, MarketplaceData.abi, signer);
+      const contract = new ethers.Contract(
+        MarketplaceData.address,
+        MarketplaceData.abi,
+        signer
+      );
 
       // Fetch owned token IDs from the custom smart contract function
       const tokenIds = await contract.getOwnedTokens(userAddress);
 
       const ownedTickets: NFT[] = [];
-      const eventCounter: { [key: string]: number } = {}; // Counter for events
 
       for (const tokenId of tokenIds) {
         try {
           const tokenURI = await contract.tokenURI(tokenId);
           const tokenDetails = await contract.getTokenDetails(tokenId);
 
-          if (tokenDetails.owner.toLowerCase() !== userAddress.toLowerCase()) {
-            continue;
-          }
-
-          // Extract CID from the tokenURI (e.g., ipfs://<CID>)
           const cid = tokenURI.replace("ipfs://", "");
           const result = await getNFTMetadata(cid);
 
           if (result.success && result.metadata) {
             const metadata = result.metadata;
-            const eventName = metadata.name || "Unnamed Event";
-            eventCounter[eventName] = (eventCounter[eventName] || 0) + 1;
 
-            ownedTickets.push({
+            const ticket: NFT = {
               tokenId,
               owner: userAddress,
-              image: metadata.image,
-              name: `${eventName} #${eventCounter[eventName]}`,
-              description: metadata.keyValues.description || "No description provided",
-              price: metadata.keyValues.price || "0",
-              seller: userAddress,
-              eventDate: metadata.keyValues.date,
-              location: metadata.keyValues.location,
-              currentlyListed: await contract.getTokenDetails(tokenId).then((t) => t.currentlyListed),
-            });
+              image: metadata.image?.startsWith("ipfs://")
+                ? `https://gateway.pinata.cloud/ipfs/${metadata.image.replace(
+                    "ipfs://",
+                    ""
+                  )}`
+                : metadata.image || "",
+              name: metadata.name || "Unnamed Event",
+              description:
+                metadata.keyValues?.description || "No description provided",
+              price: parseFloat(
+                ethers.formatUnits(tokenDetails.price || "0", "ether")
+              ),
+              eventDate: metadata.keyValues?.date || "Unknown",
+              location: metadata.keyValues?.location || "Unknown",
+              currentlyListed: tokenDetails.currentlyListed,
+              seller: "N/A", // Placeholder value
+            };
+
+            ownedTickets.push(ticket);
           } else {
-            console.error(`Failed to fetch metadata for token ${tokenId}:`, result.message);
+            console.error(
+              `Failed to fetch metadata for token ${tokenId}:`,
+              result.message
+            );
           }
         } catch (error) {
-          console.error(`Error fetching metadata for tokenId ${tokenId}:`, error);
+          console.error(
+            `Error fetching metadata for tokenId ${tokenId}:`,
+            error
+          );
         }
       }
 
@@ -94,16 +113,7 @@ const MyTickets = () => {
           alert("MetaMask is not installed!");
           return;
         }
-  
-        const networkVersion = await window.ethereum.request({
-          method: "net_version",
-        });
-        if (networkVersion !== "17000") {
-          await window.ethereum.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0x4268" }],
-          });
-        }
+
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(
@@ -136,15 +146,6 @@ const MyTickets = () => {
         return;
       }
 
-      const networkVersion = await window.ethereum.request({
-        method: "net_version",
-      });
-      if (networkVersion !== "17000") {
-        await window.ethereum.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0x4268" }],
-        });
-      }
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(
@@ -182,24 +183,18 @@ const MyTickets = () => {
             {tickets.map((ticket) => (
               <Col md={4} key={ticket.tokenId} className="mb-4">
                 <Card>
-                  <Card.Img
-                    variant="top"
-                    src={
-                      ticket.image?.startsWith("ipfs://")
-                        ? `https://gateway.pinata.cloud/ipfs/${ticket.image.replace("ipfs://", "")}`
-                        : ticket.image
-                    }
-                  />
+                  <Card.Img variant="top" src={ticket.image} />
                   <Card.Body>
                     <Card.Title>{ticket.name}</Card.Title>
                     <Card.Text>{ticket.description}</Card.Text>
                     <Card.Text>
-                      <strong>Token ID:</strong> {ticket.tokenId}
+                      <Badge bg="info">Date: {ticket.eventDate}</Badge> <br />
+                      <Badge bg="secondary">Location: {ticket.location}</Badge>
                     </Card.Text>
                     <Card.Text>
                       <strong>Price:</strong>{" "}
                       {ticket.currentlyListed
-                        ? `${ethers.formatEther(ticket.price)} ETH`
+                        ? `${ticket.price} ETH`
                         : "Not Listed"}
                     </Card.Text>
                     {ticket.currentlyListed ? (
