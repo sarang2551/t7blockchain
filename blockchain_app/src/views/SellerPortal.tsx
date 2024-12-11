@@ -540,11 +540,11 @@ const SellerPortal = () => {
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">
-                      <Form.Label>Price (ETH)</Form.Label>
+                      <Form.Label>Max Price (ETH)</Form.Label>
                       <Form.Control
                         type="number"
                         name="price"
-                        value={editFormData.price}
+                        value={editFormData.maxPrice}
                         readOnly
                         style={{ backgroundColor: "#e9ecef" }}
                       />

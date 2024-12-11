@@ -12,6 +12,7 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
     Counters.Counter private _itemsSold;
 
     address payable contractOwner;
+    uint256 public listPrice = 0.01 ether;  // List price as required by the frontend
 
     struct ListedToken {
         uint256 tokenId;
@@ -127,10 +128,11 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
         token.maxPrice = maxPrice;
     }
 
-    function listToken(uint256 tokenId, uint256 price) public nonReentrant {
+    function listToken(uint256 tokenId, uint256 price) public payable nonReentrant {
         require(msg.sender == ownerOf(tokenId), "Only the owner can list the NFT.");
         require(price > 0, "Price must be greater than zero.");
-        
+        require(msg.value == listPrice, "Must pay the listing fee.");
+
         ListedToken storage token = idToListedToken[tokenId];
         require(!token.currentlyListed, "Token is already listed.");
         require(price <= token.maxPrice, "Price exceeds max allowed by minter.");
@@ -179,11 +181,24 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
         emit TokenDelisted(tokenId, msg.sender);
     }
 
+    function getOwnedTokens(address _owner) public view returns (uint256[] memory) {
+        return ownerTokens[_owner];
+    }
+
+    function getTokenDetails(uint256 tokenId) public view returns (ListedToken memory) {
+        require(tokenId > 0 && tokenId <= _tokenIds.current(), "Invalid token ID.");
+        return idToListedToken[tokenId];
+    }
+
+    function getListPrice() public view returns (uint256) {
+        return listPrice;
+    }
+
     function getWhitelistedAddresses() public view returns (address[] memory, string[] memory) {
         uint256 count = 0;
 
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            address addr = ownerOf(i + 1);
+        for (uint256 i = 1; i <= _tokenIds.current(); i++) {
+            address addr = ownerOf(i);
             if (bytes(whitelistedAddresses[addr]).length > 0) {
                 count++;
             }
@@ -193,8 +208,8 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
         string[] memory labels = new string[](count);
         uint256 index = 0;
 
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            address addr = ownerOf(i + 1);
+        for (uint256 i = 1; i <= _tokenIds.current(); i++) {
+            address addr = ownerOf(i);
             if (bytes(whitelistedAddresses[addr]).length > 0) {
                 addresses[index] = addr;
                 labels[index] = whitelistedAddresses[addr];
