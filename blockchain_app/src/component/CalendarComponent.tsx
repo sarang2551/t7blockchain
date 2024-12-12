@@ -17,13 +17,16 @@ const CalendarComponent = ({tokens}:CalendarInterface) =>{
           const matchingToken = tokens?.find((token) => isSameDay(new Date(token.eventDate),date));
           if (matchingToken) {
             return (
-              <div style={{ backgroundColor: 'blue', color: 'white' }}>
+              <div style={{ backgroundColor: '#6f48eb', color: 'white' }}>
                 {matchingToken.name || 'Unnamed Event'}
               </div>
             );
           }
+        }else {
+          <div style={{color:"#6f48eb"}}>
+            {date.getDate()}
+          </div>
         }
-        return null;
       };
   return (
     <div>

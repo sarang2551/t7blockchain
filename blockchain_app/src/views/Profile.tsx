@@ -6,6 +6,8 @@ import NavBar from "../component/NavigationBar";
 import { getNFTMetadata } from '../utils/pinata';
 import MarketplaceData from "../utils/Marketplace.json";
 import { NFT } from "../interfaces/INFT";
+import NFTCard from "../component/NFTCard";
+import CalendarComponent from "../component/CalendarComponent";
 
 const avatar = "https://avatars.githubusercontent.com/u/59228569";
 
@@ -28,7 +30,6 @@ const Profile: React.FC = () => {
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
-
       setData({...data, address});
       await getBalance(address);
       setConnected(true);
@@ -129,8 +130,9 @@ const Profile: React.FC = () => {
 
       // mintedTokenIds are numbers of tokens minted by the user
       // Filter out minted tokens from ownedTickets
-      const filtered = ownedTickets.filter(ticket => !mintedTokenIds.map((id:any)=>id.toNumber()).includes(ticket.tokenId));
-
+      console.log(ownedTickets)
+      const filtered = ownedTickets.filter(ticket => ticket.minter !== signer.address);
+      console.log(filtered)
       setMyNFTs(filtered);
     } catch (error) {
       console.error("Error loading profile data:", error);
@@ -140,6 +142,7 @@ const Profile: React.FC = () => {
   };
 
   useEffect(() => {
+    connectWallet();
     loadProfileData();
   }, []);
 
@@ -154,52 +157,38 @@ const Profile: React.FC = () => {
         </>
       ) : (
         <>
-          <Row className="mb-4">
-            <Col>
-              <Card style={{ width: "24rem" }} className="shadow">
-                <Card.Header className="text-center text-white">
-                  <img src={avatar} style={{width:200,height:200,borderRadius:"25%"}} alt="profile"/>
-                </Card.Header>
-                <Card.Body>
-                  <Card.Text>
-                    <strong>Address:</strong> <br />
-                    {data.address || "Not connected"}
-                  </Card.Text>
-                  <Card.Text>
-                    <strong>Balance:</strong> <br />
-                    {data.balance !== null ? `${data.balance} ETH` : "N/A"}
-                  </Card.Text>
-                  <Button onClick={connectWallet} variant="primary" className="w-100">
-                    {connected ? "Disconnect Wallet" : "Connect Wallet"}
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+        <Row className="d-flex align-items-center justify-content-end mb-4">
+          <Col className="d-flex justify-content-start me-4">
+            <Card style={{ width: "24rem" }} className="shadow">
+              <Card.Header className="text-center text-white">
+                <img
+                  src={avatar}
+                  style={{ width: 200, height: 200, borderRadius: "25%" }}
+                  alt="profile"
+                />
+              </Card.Header>
+              <Card.Body>
+                <Card.Text>
+                  <strong>Address:</strong> <br />
+                  {data.address || "Not connected"}
+                </Card.Text>
+                <Card.Text>
+                  <strong>Balance:</strong> <br />
+                  {data.balance !== null ? `${data.balance} ETH` : "N/A"}
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col
+            className="d-flex justify-end">
+            <CalendarComponent tokens={myNFTs} />
+          </Col>
+        </Row>
           <Row>
             {myNFTs.length > 0 ? (
               myNFTs.map((nft: NFT, idx: number) => (
                 <Col md={4} key={idx} className="mb-4">
-                  <Card>
-                    <Card.Img
-                      variant="top"
-                      src={nft.image}
-                      style={{
-                        width: "100%",
-                        height: "300px",
-                        objectFit: "cover",
-                        borderTopLeftRadius: "5px",
-                        borderTopRightRadius: "5px",
-                      }}
-                    />
-                    <Card.Body>
-                      <Card.Title>{nft.name}</Card.Title>
-                      <Card.Text>{nft.description}</Card.Text>
-                      <Card.Text><strong>Date:</strong> {nft.eventDate}</Card.Text>
-                      <Card.Text><strong>Location:</strong> {nft.location}</Card.Text>
-                      <Card.Text><strong>Price:</strong> {nft.currentlyListed ? `${nft.price} ETH` : "Not Listed"}</Card.Text>
-                    </Card.Body>
-                  </Card>
+                  <NFTCard token={nft} onBuy={undefined}/>
                 </Col>
               ))
             ) : (
