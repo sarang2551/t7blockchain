@@ -378,8 +378,8 @@ const SellerPortal = () => {
         <h1>Seller's Portal</h1>
 
         {/* Form for Minting Tickets */}
-        <Row className="mt-4">
-          <Col md={6}>
+        <Row className="mt-4 justify-content-center">
+          <Col md={6} className="mx-auto p-5" style={{ backgroundColor: "#f8f9fa", borderRadius: "20px" }}>
             <h4>Create a New Event</h4>
             <Form>
               <Form.Group className="mb-3">
@@ -478,6 +478,7 @@ const SellerPortal = () => {
                   <th>Date</th>
                   <th>Location</th>
                   <th>Price (ETH)</th>
+                  <th>Max Price (ETH)</th>
                   <th>Status</th>
                   <th>Edit Ticket</th>
                 </tr>
@@ -494,6 +495,7 @@ const SellerPortal = () => {
                     <td>{ticket.date}</td>
                     <td>{ticket.location}</td>
                     <td>{ticket.price}</td>
+                    <td>{ticket.maxPrice}</td>
                     <td>{ticket.status}</td>
                     <td>{ticket.status === "Unlisted" ? (
                       <Button variant="warning" onClick={() => handleEditTicket(ticket)}>Edit Ticket</Button>
@@ -544,9 +546,11 @@ const SellerPortal = () => {
                       <Form.Control
                         type="number"
                         name="price"
-                        value={editFormData.maxPrice}
-                        readOnly
-                        style={{ backgroundColor: "#e9ecef" }}
+                        value={editFormData.maxPrice || ""}
+                        onChange={handleEditInputChange}
+                        min = "0"
+                        //readOnly
+                        //style={{ backgroundColor: "#e9ecef" }}
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">

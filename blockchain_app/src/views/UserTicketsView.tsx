@@ -183,7 +183,13 @@ const MyTickets = () => {
             {tickets.map((ticket) => (
               <Col md={4} key={ticket.tokenId} className="mb-4">
                 <Card>
-                  <Card.Img variant="top" src={ticket.image} />
+                  <Card.Img variant="top" src={ticket.image} style={{
+                    width: "100%",
+                    height: "300px",
+                    objectFit: "cover",
+                    borderTopLeftRadius: "5px",
+                    borderTopRightRadius: "5px",
+                  }}/>
                   <Card.Body>
                     <Card.Title>{ticket.name}</Card.Title>
                     <Card.Text>{ticket.description}</Card.Text>
