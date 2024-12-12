@@ -49,7 +49,7 @@ const EventView = () =>{
           price: tokenDetails.price.toString(),
           image: imageUrl,
           currentlyListed: tokenDetails.currentlyListed,
-          seller:tokenDetails.seller,
+          minter:tokenDetails.minter,
           owner:tokenDetails.owner
           };
           return listedToken

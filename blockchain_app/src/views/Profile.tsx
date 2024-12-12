@@ -1,174 +1,216 @@
 import React, { useState, useEffect } from "react";
-import { BrowserProvider, formatEther,ethers } from "ethers";
+import { BrowserProvider, formatEther, ethers } from "ethers";
 import { Button, Card, Row, Spinner, Container, Col} from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import NavBar from "../component/NavigationBar";
-import {useContract} from "../component/ContractContext"
-import { ListedToken } from "../interfaces/ListedToken";
-import NFTCard from "../component/NFTCard";
-import {getNFTMetadata} from '../utils/pinata'
-import CalendarComponent from "../component/CalendarComponent";
+import { getNFTMetadata } from '../utils/pinata';
+import MarketplaceData from "../utils/Marketplace.json";
 import { NFT } from "../interfaces/INFT";
 
-const avatar = "https://avatars.githubusercontent.com/u/59228569"
+const avatar = "https://avatars.githubusercontent.com/u/59228569";
 
 
 const Profile: React.FC = () => {
-  // useState for storing wallet address and balance
-  const [data, setData] = useState<{
-    address: string;
-    balance: string | null;
-  }>({
+  const [data, setData] = useState<{address: string; balance: string | null;}>({
     address: "",
     balance: null,
   });
   const [connected, setConnected] = useState(false);
-  const { nftContract, signer, initializeContract } = useContract();
-  const [myNFTs,setMyNFTs] = useState<NFT[]>([]);
-  const [loading,setLoading] = useState<boolean>(true)
-  const isInitialised = nftContract !== null;
-  // Function to connect or disconnect the wallet
+  const [myNFTs, setMyNFTs] = useState<NFT[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
   const connectWallet = async () => {
     if (!connected) {
-      try {
-        // Connect the wallet using ethers.js
-        if(signer){
-          const _walletAddress = await signer.getAddress();
-
-          setData((prevData) => ({
-            ...prevData,
-            address: _walletAddress,
-          }));
-
-          await getBalance(_walletAddress); // Fetch balance
-          setConnected(true);
-        }
-        
-      } catch (error) {
-        console.error("Error connecting wallet:", error);
+      if (!window.ethereum) {
+        alert("MetaMask not installed");
+        return;
       }
-    } else {
-      // Disconnect the wallet
-      setData({
-        address: "",
-        balance: null,
-      });
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
 
+      setData({...data, address});
+      await getBalance(address);
+      setConnected(true);
+    } else {
+      setData({ address: "", balance: null });
       setConnected(false);
     }
   };
 
-  // Function to fetch balance in Ether
   const getBalance = async (address: string) => {
     try {
       const provider = new BrowserProvider(window.ethereum!);
       const balance = await provider.getBalance(address);
-
-      setData((prevData) => ({
-        ...prevData,
-        balance: formatEther(balance), // Format balance to Ether
-      }));
+      setData((prev) => ({ ...prev, balance: formatEther(balance)}));
     } catch (error) {
       console.error("Error fetching balance:", error);
     }
   };
 
-  const retrieveMyTokens = async():Promise<NFT[]|undefined> =>{
-      if(!nftContract || !signer){
-        await initializeContract();
-        return
-      }
-      const contractResponse = await nftContract.getAllNFTs(); // returns a list of token IDs owned by the msg.sender
-      const contractNfts = contractResponse?.filter((obj:any)=>obj.owner.toLowerCase() === signer.address.toLowerCase())
+  const fetchOwnedTokens = async (userAddress: string) => {
+    const provider = new BrowserProvider(window.ethereum!);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(MarketplaceData.address, MarketplaceData.abi, signer);
+    const tokenIds = await contract.getOwnedTokens(userAddress);
 
-      const parsedNFTs : NFT[] = await Promise.all(
-        contractNfts?.map(async (nft:any) => {
-          try {
-            // Fetch token URI for metadata
-            const tokenURI = await nftContract?.tokenURI(nft.tokenId);
-            
-            // Fetch off-chain metadata using the tokenURI
-            const metadataResult = await getNFTMetadata(tokenURI.replace("ipfs://", ""));
-            const offchainmetadata = metadataResult.metadata;
-            // Build the image URL from IPFS
-            const imageUrl = `https://gateway.pinata.cloud/ipfs/${tokenURI.replace("ipfs://", "")}`;
-    
-            return {
-              id: nft.tokenId.toString(),
-              name: offchainmetadata?.name  || "",
-              description: offchainmetadata?.keyValues?.description || "No description available",
-              eventDate: offchainmetadata?.keyValues?.date || "Unknown",
-              location: offchainmetadata?.keyValues?.location || "Unknown",
-              price: ethers.formatUnits(nft.price.toString(), "ether"),
-              image: imageUrl,
-              status: nft.currentlyListed
-                ? "Listed"
-                : nft.owner.toLowerCase() !== nft.seller.toLowerCase()
-                ? "Sold"
-                : "Unlisted",
-            };
-          } catch (error) {
-            console.error(`Failed to parse NFT with tokenId ${nft.tokenId}:`, error);
-            return null; // Return null or handle errors gracefully
-          }
-        }))
+    const ownedTickets: NFT[] = [];
 
-        return parsedNFTs;
+    for (const tokenId of tokenIds) {
+      try {
+        const tokenDetails = await contract.getTokenDetails(tokenId);
+        const tokenURI = await contract.tokenURI(tokenId);
+        const cid = tokenURI.replace("ipfs://", "");
+        const result = await getNFTMetadata(cid);
 
-    }
+        if (result.success && result.metadata) {
+          const metadata = result.metadata;
 
-  useEffect(()=>{
-    setLoading(true)
-    if(isInitialised){
-      retrieveMyTokens().then((nfts:NFT[]|undefined)=>{
-        if(nfts){
-          setMyNFTs(nfts)
+          const imageUrl = metadata.image?.startsWith("ipfs://")
+            ? `https://gateway.pinata.cloud/ipfs/${metadata.image.replace("ipfs://", "")}`
+            : metadata.image || "";
+
+          const ticket: NFT = {
+            tokenId,
+            minter: tokenDetails.minter,
+            owner: tokenDetails.owner,
+            image: imageUrl,
+            name: tokenDetails.name || "Unnamed Event",
+            description: metadata.keyValues?.description || tokenDetails.description || "No description provided",
+            price: parseFloat(
+              ethers.formatUnits(tokenDetails.price?.toString() || "0", "ether")
+            ),
+            eventDate: metadata.keyValues?.date || "Unknown",
+            location: metadata.keyValues?.location || "Unknown",
+            currentlyListed: tokenDetails.currentlyListed
+          };
+
+          ownedTickets.push(ticket);
         }
-      })
-    }else{
-      initializeContract();
+      } catch (error) {
+        console.error(`Error fetching metadata for tokenId ${tokenId}:`, error);
+      }
     }
-    setLoading(false)
-  },[isInitialised])
+    return ownedTickets;
+  };
+
+  const fetchMintedTokens = async (userAddress: string) => {
+    const provider = new BrowserProvider(window.ethereum!);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(MarketplaceData.address, MarketplaceData.abi, signer);
+    return contract.getMintedTokens(userAddress);
+  };
+
+  const loadProfileData = async () => {
+    setLoading(true);
+    try {
+      if (!window.ethereum) {
+        alert("MetaMask is not installed!");
+        setLoading(false);
+        return;
+      }
+      
+      const networkVersion = await window.ethereum.request({ method: "net_version" });
+      if (networkVersion !== "17000") {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x4268" }],
+        });
+      }
+
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+
+      const [ownedTickets, mintedTokenIds] = await Promise.all([
+        fetchOwnedTokens(userAddress),
+        fetchMintedTokens(userAddress)
+      ]);
+
+      // mintedTokenIds are numbers of tokens minted by the user
+      // Filter out minted tokens from ownedTickets
+      const filtered = ownedTickets.filter(ticket => !mintedTokenIds.map((id:any)=>id.toNumber()).includes(ticket.tokenId));
+
+      setMyNFTs(filtered);
+    } catch (error) {
+      console.error("Error loading profile data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProfileData();
+  }, []);
 
   return (
     <>
-    <NavBar/>
-    <Container fluid='md' style={{padding:0, marginTop:10}}>
-    {loading ? <><Spinner animation="border" variant="primary" />
-                  <p>Loading token details...</p></> : 
-    <><Row className="mb-4">
-      <Col>
-      <Card style={{ width: "24rem" }} className="shadow">
-        <Card.Header className="text-center text-white">
-          <img src={avatar} style={{width:200,height:200,borderRadius:"25%"}}/>
-        </Card.Header>
-        <Card.Body>
-          <Card.Text>
-            <strong>Address:</strong> <br />
-            {data.address || "Not connected"}
-          </Card.Text>
-          <Card.Text>
-            <strong>Balance:</strong> <br />
-            {data.balance !== null ? `${data.balance} ETH` : "N/A"}
-          </Card.Text>
-          <Button onClick={connectWallet} variant="primary" className="w-100">
-            {connected ? "Disconnect Wallet" : "Connect Wallet"}
-          </Button>
-        </Card.Body>
-      </Card>
-      </Col>
-      <Col>
-      <CalendarComponent tokens={myNFTs}/>
-      </Col>
-      </Row>
-      <Row>
-        {myNFTs?myNFTs?.map((nft:NFT,idx:number)=>
-          <NFTCard key={idx} token={nft}/>
-        ) : <Col>No tickets owned</Col>}
-      </Row></>}
-    
-    </Container>
+      <NavBar/>
+      <Container fluid='md' style={{padding:0, marginTop:10}}>
+      {loading ? (
+        <>
+          <Spinner animation="border" variant="primary" />
+          <p>Loading token details...</p>
+        </>
+      ) : (
+        <>
+          <Row className="mb-4">
+            <Col>
+              <Card style={{ width: "24rem" }} className="shadow">
+                <Card.Header className="text-center text-white">
+                  <img src={avatar} style={{width:200,height:200,borderRadius:"25%"}} alt="profile"/>
+                </Card.Header>
+                <Card.Body>
+                  <Card.Text>
+                    <strong>Address:</strong> <br />
+                    {data.address || "Not connected"}
+                  </Card.Text>
+                  <Card.Text>
+                    <strong>Balance:</strong> <br />
+                    {data.balance !== null ? `${data.balance} ETH` : "N/A"}
+                  </Card.Text>
+                  <Button onClick={connectWallet} variant="primary" className="w-100">
+                    {connected ? "Disconnect Wallet" : "Connect Wallet"}
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+          <Row>
+            {myNFTs.length > 0 ? (
+              myNFTs.map((nft: NFT, idx: number) => (
+                <Col md={4} key={idx} className="mb-4">
+                  <Card>
+                    <Card.Img
+                      variant="top"
+                      src={nft.image}
+                      style={{
+                        width: "100%",
+                        height: "300px",
+                        objectFit: "cover",
+                        borderTopLeftRadius: "5px",
+                        borderTopRightRadius: "5px",
+                      }}
+                    />
+                    <Card.Body>
+                      <Card.Title>{nft.name}</Card.Title>
+                      <Card.Text>{nft.description}</Card.Text>
+                      <Card.Text><strong>Date:</strong> {nft.eventDate}</Card.Text>
+                      <Card.Text><strong>Location:</strong> {nft.location}</Card.Text>
+                      <Card.Text><strong>Price:</strong> {nft.currentlyListed ? `${nft.price} ETH` : "Not Listed"}</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))
+            ) : (
+              <div className="text-center">
+                <p>You have no tickets here.</p>
+              </div>
+            )}
+          </Row>
+        </>
+      )}
+      </Container>
     </>
   );
 };

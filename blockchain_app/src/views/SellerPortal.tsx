@@ -15,22 +15,6 @@ import { getNFTMetadata } from "../utils/pinata";
 import { ethers, BrowserProvider } from "ethers";
 import MarketplaceData from "../utils/Marketplace.json";
 
-interface MetadataKeyValues {
-  description?: string;
-  date?: string;
-  location?: string;
-  [key: string]: any; // Allow additional properties in keyValues
-}
-
-interface Metadata {
-  name?: string;
-  keyValues?: MetadataKeyValues;
-  image?: string; // Add 'image' as it's mentioned in the error
-  [key: string]: any; // Allow additional properties in metadata
-}
-
-
-
 const SellerPortal = () => {
   const [formData, setFormData] = useState({
     eventName: "",
@@ -44,8 +28,7 @@ const SellerPortal = () => {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  //for editing files
-  const [editingTicket, setEditingTicket] = useState<any>(null); // Current ticket being edited
+  const [editingTicket, setEditingTicket] = useState<any>(null); 
   const [editFormData, setEditFormData] = useState({
     eventName: "",
     date: "",
@@ -54,8 +37,7 @@ const SellerPortal = () => {
     quantity: "",
     description: "",
   });
-  const [editLoading, setEditLoading] = useState(false); // Loading state for editing
-
+  const [editLoading, setEditLoading] = useState(false); 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -93,13 +75,16 @@ const SellerPortal = () => {
       const metadata = {
         name: formData.eventName,
         description: formData.description,
-        attributes: [
-          { trait_type: "Max Price", value: ethers.parseEther(formData.maxPrice).toString() },
-          { trait_type: "Quantity", value: formData.quantity },
-          { trait_type: "Date", value: formData.date },
-          { trait_type: "Location", value: formData.location },
-        ],
+        keyValues: {
+          description: formData.description,
+          date: formData.date,
+          location: formData.location,
+          maxPrice: formData.maxPrice,
+          quantity: formData.quantity,
+        },
+        image: "", // Will be populated by Pinata upload
       };
+      
 
       const uploadResponse = await uploadFileAndMetadataToPinata(imageFile, metadata);
       console.log("Uploaded to Pinata:", uploadResponse);
@@ -166,32 +151,38 @@ const SellerPortal = () => {
         signer
       );
 
-      const tokenIds = await contract.getOwnedTokens(userAddress);
+      const tokenIds = await contract.getMintedTokens(userAddress);
 
       const newTickets = await Promise.all(
         tokenIds.map(async (tokenId: any) => {
           const tokenDetails = await contract.getTokenDetails(tokenId);
           const tokenURI = await contract.tokenURI(tokenId);
 
-          const onchainmetadata = tokenDetails;
           const metadataResult = await getNFTMetadata(tokenURI.replace("ipfs://", ""));
-          const offchainmetadata = metadataResult.metadata;
+          const offchainmetadata: any = metadataResult.metadata || {};
+          
+          const imageUrl = offchainmetadata.image?.startsWith("ipfs://")
+            ? `https://gateway.pinata.cloud/ipfs/${offchainmetadata.image.replace("ipfs://", "")}`
+            : offchainmetadata.image || "";
 
-          const imageUrl = `https://gateway.pinata.cloud/ipfs/${tokenURI.replace("ipfs://", "")}`;
+          // Determine status
+          let status = "Unlisted";
+          if (tokenDetails.currentlyListed) {
+            status = "Listed";
+          } else if (tokenDetails.owner.toLowerCase() !== userAddress.toLowerCase()) {
+            status = "Sold";
+          }
 
           return {
             id: tokenId.toString(),
-            eventName: offchainmetadata?.name,
-            description: offchainmetadata?.keyValues.description,
-            date: offchainmetadata?.keyValues.date || "Unknown",
-            location: offchainmetadata?.keyValues.location || "Unknown",
-            price: ethers.formatUnits(onchainmetadata.price.toString(), "ether"),
+            eventName: tokenDetails.name,
+            description: offchainmetadata.keyValues?.description || tokenDetails.description,
+            date: offchainmetadata.keyValues?.date || "Unknown",
+            location: offchainmetadata.keyValues?.location || "Unknown",
+            price: ethers.formatUnits(tokenDetails.price.toString(), "ether"),
+            maxPrice: ethers.formatUnits(tokenDetails.maxPrice.toString(), "ether"),
             image: imageUrl,
-            status: onchainmetadata.currentlyListed
-              ? "Listed"
-              : tokenDetails.owner.toLowerCase() !== userAddress.toLowerCase()
-              ? "Sold"
-              : "Unlisted",
+            status,
           };
         })
       );
@@ -204,55 +195,38 @@ const SellerPortal = () => {
     }
   };
 
-  // const handleEditTicket = (ticketId: string) => {
-  //   // Redirect or open a modal to edit the ticket
-  //   console.log(`Editing ticket with ID: ${ticketId}`);
-  //   alert(`Editing ticket with ID: ${ticketId}`);
-  // };
-
   const handleEditTicket = async (ticket: any) => {
-    console.log("Fetched Token Details:", ticket);
-    setEditingTicket(ticket); // Set the ticket being edited
-    setEditLoading(true); // Show loading indicator while fetching data
-  
+    setEditingTicket(ticket); 
+    setEditLoading(true); 
     try {
       if (!window.ethereum) {
         alert("MetaMask is not installed!");
         return;
       }
 
-      console.log("Fetched Token Details 2:", ticket);
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const userAddress = await signer.getAddress();
-
       const contract = new ethers.Contract(
         MarketplaceData.address,
         MarketplaceData.abi,
         signer
       );
 
-      // Fetch metadata from Pinata using the token URI
-      console.log("Fetched Token Details 2:", ticket.id);
       const tokenURI = await contract.tokenURI(ticket.id);
       const tokenDetails = await contract.getTokenDetails(ticket.id);
       const metadataResult = await getNFTMetadata(tokenURI.replace("ipfs://", ""));
 
       if (metadataResult.success && metadataResult.metadata) {
-        const metadata = metadataResult.metadata as Metadata;
+        const metadata = metadataResult.metadata;
 
-  
-        // Populate the edit form with the fetched metadata
         setEditFormData({
-          eventName: metadata.name || "",
-          description: metadata.keyValues?.description || "",
-          maxPrice: ethers.formatUnits(tokenDetails.price, "ether"),
-          quantity: metadata.keyValues?.quantity || "",
-          date: metadata.keyValues?.date || "",
-          location: metadata.keyValues?.location || "",
+          eventName: metadata.name || tokenDetails.name || "",
+          description: metadata.keyValues?.description || tokenDetails.description || "",
+          maxPrice: ethers.formatUnits(tokenDetails.maxPrice, "ether"),
+          quantity: "", // Quantity is not stored on-chain, if needed store it in metadata
+          date: metadata.keyValues?.date || "Unknown",
+          location: metadata.keyValues?.location || "Unknown",
         });
-        //console.log('inside handled edit ticket ', ethers.formatUnits(tokenDetails.price, "ether"));
       } else {
         console.error("Error fetching metadata from Pinata:", metadataResult.message);
         alert("Failed to load metadata. Check the console for details.");
@@ -261,19 +235,9 @@ const SellerPortal = () => {
       console.error("Error fetching metadata:", error);
       alert("An error occurred while fetching ticket metadata.");
     } finally {
-      setEditLoading(false); // Hide loading indicator
+      setEditLoading(false);
     }
   };
-  
-  const fetchImageAsBlob = async (imageUrl: string): Promise<File> => {
-    const response = await fetch(imageUrl);
-    if (!response.ok) throw new Error("Failed to fetch image from URL");
-  
-    const blob = await response.blob();
-    const fileName = imageUrl.split("/").pop() || "file"; // Use the file name from the URL
-    return new File([blob], fileName, { type: blob.type }); // Convert Blob to File
-  };
-  
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -283,14 +247,13 @@ const SellerPortal = () => {
   const submitEditTicket = async () => {
     if (!editingTicket) return;
     setEditLoading(true);
-  
     try {
       if (!window.ethereum) {
         alert("MetaMask is not installed!");
         setEditLoading(false);
         return;
       }
-  
+
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(
@@ -298,65 +261,47 @@ const SellerPortal = () => {
         MarketplaceData.abi,
         signer
       );
-  
-      // Fetch current metadata from Pinata
+
       const tokenURI = await contract.tokenURI(editingTicket.id);
       const cid = tokenURI.replace("ipfs://", "");
       const currentMetadataResult = await getNFTMetadata(cid);
-  
+
       if (!currentMetadataResult.success || !currentMetadataResult.metadata) {
         throw new Error("Failed to fetch existing metadata from Pinata.");
       }
-  
+
       const currentMetadata = currentMetadataResult.metadata;
-  
-      // Check if maxPrice is valid and update on-chain
+
+      // Update maxPrice on-chain if changed
       if (editFormData.maxPrice && parseFloat(editFormData.maxPrice) > 0) {
         const tx = await contract.updateMaxPrice(
           editingTicket.id,
           ethers.parseEther(editFormData.maxPrice)
         );
         await tx.wait();
-        console.log("Max price updated on blockchain.");
       } else {
         alert("Please enter a valid max price.");
         setEditLoading(false);
         return;
       }
-  
-      // Update metadata for Pinata
+
       const updatedMetadata = {
         name: editFormData.eventName || currentMetadata.name,
-        description: editFormData.description || currentMetadata.keyValues.description,
-        attributes: [
-          {
-            trait_type: "Max Price",
-            value: ethers.parseEther(editFormData.maxPrice).toString(),
-          },
-          {
-            trait_type: "Quantity",
-            value: editFormData.quantity || currentMetadata.keyValues?.quantity || "",
-          },
-          {
-            trait_type: "Date",
-            value: editFormData.date || currentMetadata.keyValues?.date || "",
-          },
-          {
-            trait_type: "Location",
-            value: editFormData.location || currentMetadata.keyValues?.location || "",
-          },
-        ],
+        description: editFormData.description || currentMetadata.keyValues?.description,
+        keyValues: {
+          description: editFormData.description || currentMetadata.keyValues?.description,
+          date: editFormData.date || currentMetadata.keyValues?.date,
+          location: editFormData.location || currentMetadata.keyValues?.location
+        },
+        image: currentMetadata.image
       };
-  
-      console.log("Updating metadata for CID:", cid);
-  
-      // Update metadata on Pinata
+
       const updateResponse = await updateMetadataOnPinata(cid, updatedMetadata);
       console.log("Metadata updated successfully on Pinata:", updateResponse);
-  
+
       alert("Ticket updated successfully!");
-      fetchMintedTickets(); // Refresh tickets
-      setEditingTicket(null); // Close modal
+      fetchMintedTickets(); 
+      setEditingTicket(null); 
     } catch (error) {
       console.error("Error updating ticket:", error);
       alert("Failed to update ticket. Check the console for details.");
@@ -364,8 +309,6 @@ const SellerPortal = () => {
       setEditLoading(false);
     }
   };
-    
-  
 
   useEffect(() => {
     fetchMintedTickets();
@@ -377,7 +320,6 @@ const SellerPortal = () => {
       <Container className="mt-4">
         <h1>Seller's Portal</h1>
 
-        {/* Form for Minting Tickets */}
         <Row className="mt-4 justify-content-center">
           <Col md={6} className="mx-auto p-5" style={{ backgroundColor: "#f8f9fa", borderRadius: "20px" }}>
             <h4>Create a New Event</h4>
@@ -429,7 +371,7 @@ const SellerPortal = () => {
                   name="maxPrice"
                   value={formData.maxPrice}
                   onChange={handleInputChange}
-              />
+                />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Quantity</Form.Label>
@@ -464,7 +406,6 @@ const SellerPortal = () => {
           </Col>
         </Row>
 
-        {/* Table of Active Listings */}
         <Row className="mt-5">
           <Col>
             <h4>My Minted Tickets</h4>
@@ -545,12 +486,10 @@ const SellerPortal = () => {
                       <Form.Label>Max Price (ETH)</Form.Label>
                       <Form.Control
                         type="number"
-                        name="price"
+                        name="maxPrice"
                         value={editFormData.maxPrice || ""}
                         onChange={handleEditInputChange}
-                        min = "0"
-                        //readOnly
-                        //style={{ backgroundColor: "#e9ecef" }}
+                        min="0"
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">
@@ -559,8 +498,8 @@ const SellerPortal = () => {
                         type="number"
                         name="quantity"
                         value={editFormData.quantity}
-                        style={{ backgroundColor: "#e9ecef" }}
                         readOnly
+                        style={{ backgroundColor: "#e9ecef" }}
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">
@@ -606,13 +545,6 @@ const SellerPortal = () => {
             </div>
           </div>
         )}
-
-
-
-
-
-
-
       </Container>
     </div>
   );
