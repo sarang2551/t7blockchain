@@ -87,7 +87,7 @@ const NavBar = () => {
   }, []);
 
   return (
-    <header className="bg-white shadow">
+    <header className="shadow" style = {{backgroundColor: "#caeecf"}}>
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <nav className="flex items-center justify-between h-16 lg:h-20">
           {/* Brand Logo */}
