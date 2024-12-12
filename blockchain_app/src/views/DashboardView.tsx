@@ -10,6 +10,9 @@ import { NFT } from "../interfaces/INFT";
 import { useContract } from "../component/ContractContext";
 import CalendarComponent from "../component/CalendarComponent";
 import NFTCard from "../component/NFTCard";
+import BigNFTCard from "../component/BigNFTCard";
+import { cp } from "fs";
+
 
 const DashboardView = () => {
   const [data, setData] = useState<NFT[]>([]);
@@ -146,7 +149,7 @@ const DashboardView = () => {
   }, [isInitialized]);
 
   return (
-    <div>
+    <div style = {{backgroundColor: "white", }}>
       <Row>
         <NavBar />
       </Row>
@@ -156,7 +159,9 @@ const DashboardView = () => {
           <SearchBar />
         </Col>
         <Col>
-        <CalendarPlusFill style={{height:40,width:40}} onClick={handleClickCalendar}/>
+        <div style={{ display: "flex", justifyContent: "left", alignItems: "center", height: "100%" }}>
+        <CalendarPlusFill style={{height:40,width:40, color: "black"}} onClick={handleClickCalendar}/>
+        </div>
         <Modal centered show={modelState} size="lg" backdrop={true} onHide={()=>setModelState(false)}>
           <Modal.Header>
             Event Dates
@@ -167,6 +172,30 @@ const DashboardView = () => {
         </Modal>
         </Col>
       </Row>
+
+      <Container className="mt-4">
+        {loading ? (
+          <div className="text-center">
+            <Spinner animation="border" />
+            <p>Loading NFTs...</p>
+          </div>
+        ) : data.length > 0 ? (
+          <Row className="justify-content-center">
+            <Col md={15} className="mb-4">
+              <BigNFTCard
+                token={data[0]} // first NFT
+                onBuy={() => handleBuyNFT(data[0].tokenId, data[0].price)}
+              />
+            </Col>
+          </Row>
+        ) : (
+          <div className="text-center">
+            <p></p>
+          </div>
+        )}
+      </Container>
+
+
       <Container className="mt-4">
         {loading ? (
           <div className="text-center">

@@ -31,7 +31,7 @@ const SearchBar = () => {
                 padding: '15px 20px',   // Increased padding for larger size
                 maxWidth: '800px',      // Made the search bar wider
                 width: '100%', 
-                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)', // Stronger shadow for better visibility
+                boxShadow: '0 8px 16px rgba(202, 238, 207, 1)', // Stronger shadow for better visibility
                 backgroundColor: '#fff',
             }}>
                 {/* Search Icon */}
