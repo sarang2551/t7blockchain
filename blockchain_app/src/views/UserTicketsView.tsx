@@ -45,41 +45,38 @@ const MyTickets = () => {
         signer
       );
 
-      // Fetch owned token IDs from the custom smart contract function
+      // Fetch owned token IDs
       const tokenIds = await contract.getOwnedTokens(userAddress);
 
       const ownedTickets: NFT[] = [];
 
       for (const tokenId of tokenIds) {
         try {
-          const tokenURI = await contract.tokenURI(tokenId);
           const tokenDetails = await contract.getTokenDetails(tokenId);
-
+          const tokenURI = await contract.tokenURI(tokenId);
           const cid = tokenURI.replace("ipfs://", "");
           const result = await getNFTMetadata(cid);
 
           if (result.success && result.metadata) {
             const metadata = result.metadata;
 
+            const imageUrl = metadata.image?.startsWith("ipfs://")
+              ? `https://gateway.pinata.cloud/ipfs/${metadata.image.replace("ipfs://", "")}`
+              : metadata.image || "";
+
             const ticket: NFT = {
               tokenId,
-              owner: userAddress,
-              image: metadata.image?.startsWith("ipfs://")
-                ? `https://gateway.pinata.cloud/ipfs/${metadata.image.replace(
-                    "ipfs://",
-                    ""
-                  )}`
-                : metadata.image || "",
-              name: metadata.name || "Unnamed Event",
-              description:
-                metadata.keyValues?.description || "No description provided",
+              owner: tokenDetails.owner,
+              image: imageUrl,
+              name: tokenDetails.name || "Unnamed Event",
+              description: metadata.keyValues?.description || tokenDetails.description || "No description provided",
               price: parseFloat(
-                ethers.formatUnits(tokenDetails.price || "0", "ether")
+                ethers.formatUnits(tokenDetails.price?.toString() || "0", "ether")
               ),
               eventDate: metadata.keyValues?.date || "Unknown",
               location: metadata.keyValues?.location || "Unknown",
               currentlyListed: tokenDetails.currentlyListed,
-              seller: "N/A", // Placeholder value
+              minter: tokenDetails.minter, 
             };
 
             ownedTickets.push(ticket);
@@ -90,10 +87,7 @@ const MyTickets = () => {
             );
           }
         } catch (error) {
-          console.error(
-            `Error fetching metadata for tokenId ${tokenId}:`,
-            error
-          );
+          console.error(`Error fetching metadata for tokenId ${tokenId}:`, error);
         }
       }
 
@@ -106,8 +100,8 @@ const MyTickets = () => {
   };
 
   const handleListForSale = async (ticket: NFT) => {
-    const priceInWei = prompt("Enter the price in ETH for this NFT:");
-    if (priceInWei) {
+    const priceInETH = prompt("Enter the price in ETH for this NFT:");
+    if (priceInETH) {
       try {
         if (!window.ethereum) {
           alert("MetaMask is not installed!");
@@ -122,16 +116,16 @@ const MyTickets = () => {
           signer
         );
 
-        const priceWei = ethers.parseEther(priceInWei).toString();
-        const listPrice = await contract.getListPrice();
+        const priceWei = ethers.parseEther(priceInETH).toString();
+        // If there's a listing fee or listPrice required, fetch it here if your contract requires it.
+        // const listPrice = await contract.getListPrice(); 
+        // If not needed, remove the line above and { value: listPrice } from the transaction below.
 
-        const transaction = await contract.listToken(ticket.tokenId, priceWei, {
-          value: listPrice,
-        });
+        const transaction = await contract.listToken(ticket.tokenId, priceWei);
         await transaction.wait();
 
         alert(`NFT with ID ${ticket.tokenId} listed for sale!`);
-        getOwnedTickets(); // Refresh tickets after listing
+        getOwnedTickets(); 
       } catch (error) {
         console.error("Error listing NFT:", error);
         alert("Failed to list the NFT. Check the console for details.");
@@ -158,7 +152,7 @@ const MyTickets = () => {
       await transaction.wait();
 
       alert(`NFT with ID ${ticket.tokenId} has been unlisted.`);
-      getOwnedTickets(); // Refresh tickets after unlisting
+      getOwnedTickets(); 
     } catch (error) {
       console.error("Error unlisting NFT:", error);
       alert("Failed to unlist the NFT. Check the console for details.");
@@ -183,13 +177,17 @@ const MyTickets = () => {
             {tickets.map((ticket) => (
               <Col md={4} key={ticket.tokenId} className="mb-4">
                 <Card>
-                  <Card.Img variant="top" src={ticket.image} style={{
-                    width: "100%",
-                    height: "300px",
-                    objectFit: "cover",
-                    borderTopLeftRadius: "5px",
-                    borderTopRightRadius: "5px",
-                  }}/>
+                  <Card.Img
+                    variant="top"
+                    src={ticket.image}
+                    style={{
+                      width: "100%",
+                      height: "300px",
+                      objectFit: "cover",
+                      borderTopLeftRadius: "5px",
+                      borderTopRightRadius: "5px",
+                    }}
+                  />
                   <Card.Body>
                     <Card.Title>{ticket.name}</Card.Title>
                     <Card.Text>{ticket.description}</Card.Text>

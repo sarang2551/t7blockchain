@@ -32,14 +32,14 @@ export const uploadFileAndMetadataToPinata = async (
   try {
     console.log("Uploading file to Pinata...");
 
-    // Flatten metadata for keyValues
+    // Flatten metadata using keyValues instead of attributes
     const flattenedMetadata = {
       name: metadata.name,
       description: metadata.description,
-      price: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Price")?.value,
-      quantity: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Quantity")?.value,
-      date: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Date")?.value,
-      location: metadata.attributes.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Location")?.value,
+      price: metadata.keyValues?.maxPrice || "",
+      quantity: metadata.keyValues?.quantity || "",
+      date: metadata.keyValues?.date || "",
+      location: metadata.keyValues?.location || "",
     };
 
     // Upload file to Pinata with metadata
@@ -49,12 +49,13 @@ export const uploadFileAndMetadataToPinata = async (
     });
 
     console.log("Upload successful:", upload);
-    return upload; // Returns upload response
+    return upload; 
   } catch (error) {
     console.error("Error uploading file and metadata to Pinata:", error);
     throw error;
   }
 };
+
 
 
 /**
@@ -75,17 +76,15 @@ export const updateMetadataOnPinata = async (cid: string, metadata: Metadata) =>
   try {
     console.log("Updating metadata on Pinata...");
 
-    // Flatten metadata for keyValues
     const flattenedMetadata = {
       name: metadata.name,
       description: metadata.description,
-      price: metadata.attributes?.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Price")?.value,
-      quantity: metadata.attributes?.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Quantity")?.value,
-      date: metadata.attributes?.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Date")?.value,
-      location: metadata.attributes?.find((attr: { trait_type: string; value: any }) => attr.trait_type === "Location")?.value,
+      price: metadata.keyValues?.maxPrice || "",
+      quantity: metadata.keyValues?.quantity || "",
+      date: metadata.keyValues?.date || "",
+      location: metadata.keyValues?.location || "",
     };
 
-    // Call Pinata's updateMetadata function
     const update = await pinata.updateMetadata({
       cid,
       name: metadata.name,
@@ -93,7 +92,7 @@ export const updateMetadataOnPinata = async (cid: string, metadata: Metadata) =>
     });
 
     console.log("Metadata updated successfully:", update);
-    return update; // Return the update response
+    return update;
   } catch (error) {
     console.error("Error updating metadata on Pinata:", error);
     throw error;

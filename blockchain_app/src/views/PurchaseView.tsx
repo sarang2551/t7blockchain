@@ -45,7 +45,7 @@ const PurchaseView = ()=>{
         let item : NFT = {
             price: meta.price,
             tokenId: tokenId,
-            seller: listedToken.seller,
+            minter: listedToken.minter,
             owner: listedToken.owner,
             image: meta.image,
             name: listedToken.name,
