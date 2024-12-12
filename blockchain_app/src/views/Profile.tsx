@@ -26,6 +26,7 @@ const Profile: React.FC = () => {
   const { nftContract, signer, initializeContract } = useContract();
   const [myNFTs,setMyNFTs] = useState<NFT[]>([]);
   const [loading,setLoading] = useState<boolean>(true)
+  const isInitialised = nftContract !== null;
   // Function to connect or disconnect the wallet
   const connectWallet = async () => {
     if (!connected) {
@@ -73,13 +74,15 @@ const Profile: React.FC = () => {
   };
 
   const retrieveMyTokens = async():Promise<NFT[]|undefined> =>{
-      if(!nftContract){
+      if(!nftContract || !signer){
         await initializeContract();
         return
       }
-      const myNFTs = await nftContract.getMyNFTs();
+      const contractResponse = await nftContract.getAllNFTs(); // returns a list of token IDs owned by the msg.sender
+      const contractNfts = contractResponse?.filter((obj:any)=>obj.owner.toLowerCase() === signer.address.toLowerCase())
+
       const parsedNFTs : NFT[] = await Promise.all(
-        myNFTs?.map(async (nft:any) => {
+        contractNfts?.map(async (nft:any) => {
           try {
             // Fetch token URI for metadata
             const tokenURI = await nftContract?.tokenURI(nft.tokenId);
@@ -87,15 +90,14 @@ const Profile: React.FC = () => {
             // Fetch off-chain metadata using the tokenURI
             const metadataResult = await getNFTMetadata(tokenURI.replace("ipfs://", ""));
             const offchainmetadata = metadataResult.metadata;
-    
             // Build the image URL from IPFS
             const imageUrl = `https://gateway.pinata.cloud/ipfs/${tokenURI.replace("ipfs://", "")}`;
     
             return {
               id: nft.tokenId.toString(),
-              eventName: offchainmetadata?.name,
+              name: offchainmetadata?.name  || "",
               description: offchainmetadata?.keyValues?.description || "No description available",
-              date: offchainmetadata?.keyValues?.date || "Unknown",
+              eventDate: offchainmetadata?.keyValues?.date || "Unknown",
               location: offchainmetadata?.keyValues?.location || "Unknown",
               price: ethers.formatUnits(nft.price.toString(), "ether"),
               image: imageUrl,
@@ -116,10 +118,18 @@ const Profile: React.FC = () => {
     }
 
   useEffect(()=>{
-      setLoading(true)
-      retrieveMyTokens().then((nfts:NFT[]|undefined)=>{nfts??setMyNFTs(nfts!)})
-      setLoading(false)
-  },[])
+    setLoading(true)
+    if(isInitialised){
+      retrieveMyTokens().then((nfts:NFT[]|undefined)=>{
+        if(nfts){
+          setMyNFTs(nfts)
+        }
+      })
+    }else{
+      initializeContract();
+    }
+    setLoading(false)
+  },[isInitialised])
 
   return (
     <>
@@ -153,8 +163,8 @@ const Profile: React.FC = () => {
       </Col>
       </Row>
       <Row>
-        {myNFTs?myNFTs?.map((nft:NFT)=>
-          <NFTCard token={nft}/>
+        {myNFTs?myNFTs?.map((nft:NFT,idx:number)=>
+          <NFTCard key={idx} token={nft}/>
         ) : <Col>No tickets owned</Col>}
       </Row></>}
     
