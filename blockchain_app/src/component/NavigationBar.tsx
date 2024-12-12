@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ethers, BrowserProvider } from "ethers";
 import MarketplaceData from "../utils/Marketplace.json";
 
+
 const NavBar = () => {
   const [connected, setConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
@@ -93,8 +94,12 @@ const NavBar = () => {
         <nav className="flex items-center justify-between h-16 lg:h-20">
           {/* Brand Logo */}
           <div className="flex-shrink-0">
-            <a href="/" className="text-xl font-bold text-gray-800">
-              Ticket DApp
+            <a href="/" className="flex items-center">
+              <img 
+                src="../../logo.png"  
+                alt="Ticket DApp Logo" 
+                className="h-12 w-auto"       
+              />
             </a>
           </div>
 
