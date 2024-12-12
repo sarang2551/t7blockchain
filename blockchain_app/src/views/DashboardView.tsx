@@ -54,8 +54,8 @@ const DashboardView = () => {
                 return {
                   price,
                   tokenId: i.tokenId,
-                  minter: i.minter === i.owner ? "Organizer" : i.minter,
-                  owner: i.owner,
+                  minter: i.minter === i.seller ? "Organizer" : i.minter,
+                  seller: i.seller,
                   image: meta?.image?.startsWith("ipfs://")
                     ? `https://gateway.pinata.cloud/ipfs/${meta.image.replace("ipfs://", "")}`
                     : meta?.image || "",
@@ -113,6 +113,7 @@ const DashboardView = () => {
       const contract = new ethers.Contract(MarketplaceData.address, MarketplaceData.abi, signer);
       console.log(price)
       console.log(ethers.parseEther(price.toString()))
+      console.log(tokenId)
       const transaction = await contract.executeSale(tokenId, {
         value: ethers.parseEther(price.toString()),
       });

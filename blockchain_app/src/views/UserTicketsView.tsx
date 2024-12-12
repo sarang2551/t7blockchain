@@ -66,7 +66,7 @@ const MyTickets = () => {
 
             const ticket: NFT = {
               tokenId,
-              owner: tokenDetails.owner,
+              seller: tokenDetails.seller,
               image: imageUrl,
               name: tokenDetails.name || "Unnamed Event",
               description: metadata.keyValues?.description || tokenDetails.description || "No description provided",

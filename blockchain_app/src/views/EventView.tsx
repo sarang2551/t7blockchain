@@ -50,7 +50,7 @@ const EventView = () =>{
           image: imageUrl,
           currentlyListed: tokenDetails.currentlyListed,
           minter:tokenDetails.minter,
-          owner:tokenDetails.owner
+          seller:tokenDetails.seller
           };
           return listedToken
         }catch(e:any){

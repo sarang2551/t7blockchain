@@ -46,7 +46,7 @@ const PurchaseView = ()=>{
             price: meta.price,
             tokenId: tokenId,
             minter: listedToken.minter,
-            owner: listedToken.owner,
+            seller: listedToken.seller,
             image: meta.image,
             name: listedToken.name,
             description: listedToken.description,

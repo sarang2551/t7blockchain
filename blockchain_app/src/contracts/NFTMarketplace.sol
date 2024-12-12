@@ -15,7 +15,7 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
     struct NFTInfo {
         uint256 tokenId;
         address payable minter;
-        address payable owner;
+        address payable seller; // The user who listed the NFT for sale
         uint256 price;
         uint256 maxPrice;
         bool currentlyListed;
@@ -30,12 +30,12 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
 
     event TokenListedSuccess(
         uint256 indexed tokenId,
-        address owner,
+        address indexed seller,
         uint256 price,
         bool currentlyListed
     );
 
-    event TokenDelisted(uint256 indexed tokenId, address owner);
+    event TokenDelisted(uint256 indexed tokenId, address indexed seller);
 
     modifier onlyOwner() {
         require(contractOwner == msg.sender, "Only the contract owner can perform this action.");
@@ -105,9 +105,9 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
 
             idToNFTInfo[newTokenId] = NFTInfo(
                 newTokenId,
-                payable(msg.sender), // minter
-                payable(msg.sender), // owner initially = minter
-                0,
+                payable(msg.sender),  // minter
+                payable(address(0)),  // seller is set at listing time, not now
+                0,                    // price set at listing
                 maxPrice,
                 false,
                 name,
@@ -134,16 +134,14 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
         require(!token.currentlyListed, "Token is already listed.");
         require(price <= token.maxPrice, "Price exceeds max allowed by minter.");
 
-        // Transfer NFT to the contract
+        // Transfer NFT to the contract (marketplace)
         _transfer(msg.sender, address(this), tokenId);
 
         token.currentlyListed = true;
         token.price = price;
+        token.seller = payable(msg.sender); // Record the seller at the time of listing
 
-        // Update owner in struct after transfer
-        token.owner = payable(ownerOf(tokenId));
-
-        emit TokenListedSuccess(tokenId, token.owner, price, true);
+        emit TokenListedSuccess(tokenId, msg.sender, price, true);
     }
 
     function executeSale(uint256 tokenId) public payable nonReentrant {
@@ -153,21 +151,22 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
         require(msg.value == price, "Incorrect sale price.");
         require(tokenInfo.currentlyListed, "Token not listed.");
 
+        address payable seller = tokenInfo.seller;
         address prevOwner = ownerOf(tokenId);
 
         // Transfer NFT from contract to buyer
         _transfer(address(this), msg.sender, tokenId);
 
-        // Update the struct after transfer
+        // Update struct: listing is done, reset price and seller
         NFTInfo storage updatedToken = idToNFTInfo[tokenId];
         updatedToken.currentlyListed = false;
-        updatedToken.price = 0; // Optionally reset price
-        updatedToken.owner = payable(ownerOf(tokenId)); 
+        updatedToken.price = 0;
+        updatedToken.seller = payable(address(0));
 
-        // Update ownerTokens mapping
+        // Update ownerTokens: Add to buyer
         ownerTokens[msg.sender].push(tokenId);
 
-        // Remove tokenId from the previous owner's tokens
+        // Remove tokenId from previous owner's tokens
         uint256[] storage prevOwnerTokens = ownerTokens[prevOwner];
         for (uint256 i = 0; i < prevOwnerTokens.length; i++) {
             if (prevOwnerTokens[i] == tokenId) {
@@ -179,32 +178,31 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
 
         _itemsSold.increment();
 
-        payable(prevOwner).transfer(msg.value);
+        // Pay the original seller
+        seller.transfer(msg.value);
     }
 
     function delistToken(uint256 tokenId) public nonReentrant {
         NFTInfo storage token = idToNFTInfo[tokenId];
 
         require(token.currentlyListed, "Token not listed.");
-        // Only the current owner (who listed it) can delist
-        require(msg.sender == ownerOf(tokenId) || msg.sender == token.owner, "Only the owner can delist the token.");
-
-        // Transfer NFT back to owner
-        _transfer(address(this), token.owner, tokenId);
+        require(msg.sender == token.seller, "Only the seller can delist the token.");
 
         token.currentlyListed = false;
-        // After transfer, update the owner field again
-        token.owner = payable(ownerOf(tokenId));
 
-        emit TokenDelisted(tokenId, token.owner);
+        // Transfer NFT back to seller (original lister)
+        _transfer(address(this), token.seller, tokenId);
+
+        // Reset seller after delisting
+        token.seller = payable(address(0));
+
+        emit TokenDelisted(tokenId, msg.sender);
     }
 
-    // Function to get tokens currently owned by a user
     function getOwnedTokens(address _owner) public view returns (uint256[] memory) {
         return ownerTokens[_owner];
     }
 
-    // Get tokens minted by a user
     function getMintedTokens(address _minter) public view returns (uint256[] memory) {
         return minterTokens[_minter];
     }
@@ -229,7 +227,7 @@ contract NFTMarketplace is ERC721URIStorage, ReentrancyGuard {
         string[] memory labels = new string[](count);
         uint256 index = 0;
 
-        for (uint256 i = 1; i <= nftCount; i++) {
+        for (uint256 i = 1; i <= _tokenIds.current(); i++) {
             address addr = ownerOf(i);
             if (bytes(whitelistedAddresses[addr]).length > 0) {
                 addresses[index] = addr;

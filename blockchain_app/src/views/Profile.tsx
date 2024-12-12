@@ -73,7 +73,7 @@ const Profile: React.FC = () => {
           const ticket: NFT = {
             tokenId,
             minter: tokenDetails.minter,
-            owner: tokenDetails.owner,
+            seller: tokenDetails.seller,
             image: imageUrl,
             name: tokenDetails.name || "Unnamed Event",
             description: metadata.keyValues?.description || tokenDetails.description || "No description provided",

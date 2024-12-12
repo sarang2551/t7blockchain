@@ -1,7 +1,7 @@
 export interface NFT {
     tokenId:number
     minter:string
-    owner:string
+    seller:string
     price:number
     currentlyListed:boolean
     image?:string
