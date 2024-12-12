@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
-import { Navbar, Container, Nav, Spinner } from "react-bootstrap";
 import { ethers, BrowserProvider } from "ethers";
 import MarketplaceData from "../utils/Marketplace.json";
 
 const NavBar = () => {
-  const [connected, setConnected] = useState(false); // Tracks wallet connection status
-  const [walletAddress, setWalletAddress] = useState(""); // Stores connected wallet address
-  const [isOwner, setIsOwner] = useState(false); // Checks if the wallet is the contract owner
-  const [loading, setLoading] = useState(true); // Tracks owner-check loading state
+  const [connected, setConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [isOwner, setIsOwner] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Function to connect the wallet
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
-        alert("MetaMask is not installed. Please install it to use this feature.");
+        alert(
+          "MetaMask is not installed. Please install it to use this feature."
+        );
         return;
       }
 
@@ -24,21 +24,19 @@ const NavBar = () => {
       setWalletAddress(address);
       setConnected(true);
       console.log("Connected Wallet Address:", address);
-      await checkOwner(address); // Check if connected wallet is the owner
+      await checkOwner(address);
     } catch (error) {
       console.error("Error connecting wallet:", error);
       alert("Failed to connect to wallet. Please try again.");
     }
   };
 
-  // Disconnect the wallet
   const disconnectWallet = () => {
     setConnected(false);
     setWalletAddress("");
     setIsOwner(false);
   };
 
-  // Check if the connected wallet is the contract owner
   const checkOwner = async (address: string) => {
     try {
       if (!window.ethereum) {
@@ -90,43 +88,89 @@ const NavBar = () => {
   }, []);
 
   return (
-    <Navbar collapseOnSelect expand="lg" className="bg-body-tertiary">
-      <Container>
-        <Navbar.Brand href="/" style={{ marginLeft: "80px"}}>
-          Ticket DApp
-        </Navbar.Brand>
-        <Navbar.Toggle aria-controls="responsive-navbar-nav" />
-        <Navbar.Collapse id="responsive-navbar-nav">
-          <Nav className="me-auto"></Nav>
-          <Nav>
-            <Nav.Link href="/">Explore</Nav.Link>
-            <Nav.Link href="/sell">Sell</Nav.Link>
-            <Nav.Link href="/myTickets">My Tickets</Nav.Link>
-            <Nav.Link href="/profile">Profile</Nav.Link>
+    <header className="bg-white shadow">
+      <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <nav className="flex items-center justify-between h-16 lg:h-20">
+          {/* Brand Logo */}
+          <div className="flex-shrink-0">
+            <a href="/" className="text-xl font-bold text-gray-800">
+              Ticket DApp
+            </a>
+          </div>
 
-            {!loading && isOwner && (
-              <Nav.Link href="/admin">Admin</Nav.Link>
-            )}
-
-            <Nav.Link
-              onClick={connected ? disconnectWallet : connectWallet}
-              className={`${
-                connected ? "bg-green-500" : "bg-blue-500"
-              } text-grey font-bold py-2 px-4 rounded-md cursor-pointer hover:bg-opacity-75`}
-              style={{ textAlign: "center" }}
+          {/* Menu for Larger Screens */}
+          <div className="hidden lg:flex lg:items-center lg:space-x-8">
+            <a
+              href="/"
+              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
             >
-              {connected ? (
-                `${walletAddress.substring(0, 6)}...${walletAddress.substring(
+              Explore
+            </a>
+            <a
+              href="/sell"
+              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
+            >
+              Sell
+            </a>
+            <a
+              href="/myTickets"
+              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
+            >
+              My Tickets
+            </a>
+            <a
+              href="/profile"
+              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
+            >
+              Profile
+            </a>
+            {!loading && isOwner && (
+              <a
+                href="/admin"
+                className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
+              >
+                Admin
+              </a>
+            )}
+          </div>
+
+          {/* Connect/Disconnect Button */}
+          <button
+            onClick={connected ? disconnectWallet : connectWallet}
+            className={`${
+              connected ? "bg-green-500" : "bg-blue-500"
+            } text-white font-semibold px-4 py-2 rounded-md hover:bg-opacity-75`}
+          >
+            {connected
+              ? `${walletAddress.substring(0, 6)}...${walletAddress.substring(
                   walletAddress.length - 4
                 )}`
-              ) : (
-                "Sign In"
-              )}
-            </Nav.Link>
-          </Nav>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+              : "Sign In"}
+          </button>
+
+          {/* Mobile Menu Button */}
+          <button
+            type="button"
+            className="inline-flex p-2 text-black transition-all duration-200 rounded-md lg:hidden focus:bg-gray-100 hover:bg-gray-100"
+          >
+            <svg
+              className="w-6 h-6"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 8h16M4 16h16"
+              />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
   );
 };
 
