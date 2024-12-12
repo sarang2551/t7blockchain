@@ -89,88 +89,91 @@ const NavBar = () => {
 
   return (
     <header className="bg-white shadow">
-      <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <nav className="flex items-center justify-between h-16 lg:h-20">
-          {/* Brand Logo */}
-          <div className="flex-shrink-0">
-            <a href="/" className="text-xl font-bold text-gray-800">
-              Ticket DApp
-            </a>
-          </div>
-
-          {/* Menu for Larger Screens */}
-          <div className="hidden lg:flex lg:items-center lg:space-x-8">
-            <a
-              href="/"
-              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
-            >
-              Explore
-            </a>
-            <a
-              href="/sell"
-              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
-            >
-              Sell
-            </a>
-            <a
-              href="/myTickets"
-              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
-            >
-              My Tickets
-            </a>
-            <a
-              href="/profile"
-              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
-            >
-              Profile
-            </a>
-            {!loading && isOwner && (
-              <a
-                href="/admin"
-                className="text-base font-medium text-gray-700 transition hover:text-mediumBlue"
-              >
-                Admin
-              </a>
-            )}
-          </div>
-
-          {/* Connect/Disconnect Button */}
-          <button
-            onClick={connected ? disconnectWallet : connectWallet}
-            className={`${
-              connected ? "bg-green-500" : "bg-blue-500"
-            } text-white font-semibold px-4 py-2 rounded-md hover:bg-opacity-75`}
-          >
-            {connected
-              ? `${walletAddress.substring(0, 6)}...${walletAddress.substring(
-                  walletAddress.length - 4
-                )}`
-              : "Sign In"}
-          </button>
-
-          {/* Mobile Menu Button */}
-          <button
-            type="button"
-            className="inline-flex p-2 text-black transition-all duration-200 rounded-md lg:hidden focus:bg-gray-100 hover:bg-gray-100"
-          >
-            <svg
-              className="w-6 h-6"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 8h16M4 16h16"
-              />
-            </svg>
-          </button>
-        </nav>
+  <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+    <nav className="flex items-center justify-between h-16 lg:h-20">
+      {/* Left Section: Logo */}
+      <div className="flex-shrink-0">
+        <a href="/" className="text-xl font-bold text-gray-800 text-lg">
+          Ticket DApp
+        </a>
       </div>
-    </header>
+
+      {/* Right Section: Navigation Links and Wallet Button */}
+      <div className="flex items-center space-x-8">
+        {/* Navigation Links */}
+        <div className="hidden lg:flex lg:items-center lg:space-x-8">
+          <a
+            href="/"
+            className="text-base font-medium text-gray-700 transition hover:text-mediumBlue text-lg"
+          >
+            Explore
+          </a>
+          <a
+            href="/sell"
+            className="text-base font-medium text-gray-700 transition hover:text-mediumBlue text-lg"
+          >
+            Sell
+          </a>
+          <a
+            href="/myTickets"
+            className="text-base font-medium text-gray-700 transition hover:text-mediumBlue text-lg"
+          >
+            My Tickets
+          </a>
+          <a
+            href="/profile"
+            className="text-base font-medium text-gray-700 transition hover:text-mediumBlue text-lg"
+          >
+            Profile
+          </a>
+          {!loading && isOwner && (
+            <a
+              href="/admin"
+              className="text-base font-medium text-gray-700 transition hover:text-mediumBlue text-lg"
+            >
+              Admin
+            </a>
+          )}
+        </div>
+
+        {/* Connect/Disconnect Button */}
+        <button
+          onClick={connected ? disconnectWallet : connectWallet}
+          className={`${
+            connected ? "bg-green-500" : "bg-blue-500"
+          } text-white font-semibold px-4 py-2 rounded-md hover:bg-opacity-75`}
+        >
+          {connected
+            ? `${walletAddress.substring(0, 6)}...${walletAddress.substring(
+                walletAddress.length - 4
+              )}`
+            : "Sign In"}
+        </button>
+
+        {/* Mobile Menu Button */}
+        <button
+          type="button"
+          className="inline-flex p-2 text-black transition-all duration-200 rounded-md lg:hidden focus:bg-gray-100 hover:bg-gray-100"
+        >
+          <svg
+            className="w-6 h-6"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M4 8h16M4 16h16"
+            />
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </div>
+  </header>
   );
 };
 
