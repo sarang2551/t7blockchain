@@ -31,9 +31,9 @@ const NFTCard: React.FC<ListedTokenCardProps> = ({ token, onBuy }) => {
         <Card.Text>
           <strong>Status:</strong> {token.currentlyListed}
         </Card.Text>
-        <Button variant="primary" onClick={onBuy}>
+        {onBuy?<Button variant="primary" onClick={onBuy}>
           Buy Token
-        </Button>
+        </Button>:<></>}
       </Card.Body>
     </Card>
   );

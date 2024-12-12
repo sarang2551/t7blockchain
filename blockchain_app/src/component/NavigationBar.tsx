@@ -54,7 +54,6 @@ const NavBar = () => {
       );
 
       const ownerAddress = await contract.owner();
-      console.log("Owner Address:", ownerAddress);
       setIsOwner(address.toLowerCase() === ownerAddress.toLowerCase());
     } catch (error) {
       console.error("Error checking owner:", error);
@@ -74,7 +73,6 @@ const NavBar = () => {
             const address = String(accounts[0].address);
             setWalletAddress(address);
             setConnected(true);
-            console.log("Previously Connected Wallet Address:", address);
             await checkOwner(address);
           }
         }
