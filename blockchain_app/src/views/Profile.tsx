@@ -130,10 +130,8 @@ const Profile: React.FC = () => {
 
       // mintedTokenIds are numbers of tokens minted by the user
       // Filter out minted tokens from ownedTickets
-      console.log(ownedTickets)
       const filtered = ownedTickets.filter(ticket => ticket.minter !== signer.address);
-      console.log(filtered)
-      setMyNFTs(filtered);
+      setMyNFTs(filtered.slice(1).reverse());
     } catch (error) {
       console.error("Error loading profile data:", error);
     } finally {

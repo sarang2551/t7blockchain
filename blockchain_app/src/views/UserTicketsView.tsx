@@ -128,7 +128,7 @@ const MyTickets = () => {
         getOwnedTickets(); 
       } catch (error) {
         console.error("Error listing NFT:", error);
-        alert("Failed to list the NFT. Check the console for details.");
+        alert("Price cannot exceed the max limit");
       }
     }
   };

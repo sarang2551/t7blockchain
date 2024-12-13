@@ -13,21 +13,26 @@ const CalendarComponent = ({tokens}:CalendarInterface) =>{
     const [value, onChange] = useState<Value>(new Date());
     const highlightedDates = tokens?.map((ticket)=>new Date(ticket.eventDate));
     const tileContent = ({ date, view }: any) => {
-        if (highlightedDates && view === 'month' && highlightedDates.some((highlightDate) => isSameDay(highlightDate, date))) {
-          const matchingToken = tokens?.find((token) => isSameDay(new Date(token.eventDate),date));
-          if (matchingToken) {
-            return (
-              <div style={{ backgroundColor: '#6f48eb', color: 'white' }}>
-                {matchingToken.name || 'Unnamed Event'}
-              </div>
-            );
-          }
-        }else {
-          <div style={{color:"#6f48eb"}}>
-            {date.getDate()}
-          </div>
+      if (highlightedDates && view === 'month') {
+        const matchingTokens = tokens?.filter((token) =>
+          isSameDay(new Date(token.eventDate), date)
+        );
+    
+        if (matchingTokens && matchingTokens.length > 0) {
+          return (
+            <div style={{ backgroundColor: '#6f48eb', color: 'white', padding: '5px' }}>
+              {matchingTokens.map((token, index) => (
+                <div key={index} style={{ marginBottom: '2px' }}>
+                  {token.name || 'Unnamed Event'}
+                </div>
+              ))}
+            </div>
+          );
         }
-      };
+      }
+      return null;
+    };
+    
   return (
     <div>
         <Calendar onChange={onChange} value={value} tileContent={tileContent}/>

@@ -109,21 +109,15 @@ const DashboardView = () => {
         setBuying(null);
         return;
       }
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-
-      const contract = new ethers.Contract(MarketplaceData.address, MarketplaceData.abi, signer);
-      console.log(price)
-      console.log(ethers.parseEther(price.toString()))
-      console.log(tokenId)
-      const transaction = await contract.executeSale(tokenId, {
-        value: ethers.parseEther(price.toString()),
-      });
-      await transaction.wait();
-
-      alert(`Successfully purchased NFT with ID ${tokenId}!`);
-      getAllNFTs(); // Refresh the NFT list
+      if(nftContract){
+        const transaction = await nftContract.executeSale(tokenId, {
+          value: ethers.parseEther(price.toString()),
+        });
+        await transaction.wait();
+  
+        alert(`Successfully purchased NFT with ID ${tokenId}!`);
+        getAllNFTs(); // Refresh the NFT list
+      }
     } catch (error) {
       console.error("Error buying NFT:", error);
       alert("Failed to purchase NFT. Check the console for details.");
