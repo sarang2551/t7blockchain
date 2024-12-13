@@ -1,29 +1,46 @@
-import React, { useState } from "react";
-import { Col, Row, Carousel, Image, Button } from "react-bootstrap";
-const PartyTimeImage = require("../assets/partyTime.jpg");
-const ImagineDragons = require("../assets/imagine_dragons.jpg")
+import React from "react";
+import { Carousel, Image, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { ICarousel } from "../interfaces/ICarousel";
 
-const CarouselShow = () => {
-    return ( 
-        <Carousel variant="dark" interval={2000}>
-          <Carousel.Item>
-          <Image style={{borderRadius:25}} src={PartyTimeImage} alt="First slide" width={840} height={540} />
-            <Carousel.Caption>
-              {/* <h3>Sarang's concert</h3>
-              <p>Party Time sheeeeeeeeeeeeeesh</p> */}
-              <Button variant="primary">Get Tickets</Button>
-            </Carousel.Caption>
-          </Carousel.Item>
-          <Carousel.Item>
-          <Image style={{borderRadius:25}} src={ImagineDragons} alt="Second slide" />
-            <Carousel.Caption>
-              {/* <h3>Second slide label</h3>
-              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p> */}
-              <Button variant="primary">Get Tickets</Button>
-            </Carousel.Caption>
-          </Carousel.Item>
-        </Carousel>
-    )
-}
+const CarouselShow = ({ listedTokens }: ICarousel) => {
+  const navigate = useNavigate(); 
+
+  const handleGetTickets = (tokenId: number) => {
+    navigate(`/event/${tokenId}`); // Navigate to the event page with tokenId
+  };
+
+  return (
+    <Carousel variant="dark" interval={2000}>
+      {listedTokens?.map((token) => (
+        <Carousel.Item key={token.id}>
+          <Image
+            style={{ borderRadius: 25 }}
+            src={token.image}
+            alt={`${token.eventName} slide`}
+            width={840}
+            height={540}
+          />
+          <Carousel.Caption>
+            <h3>{token.eventName}</h3>
+            <p>{token.description}</p>
+            <p>
+              <strong>Date:</strong> {token.date} | <strong>Location:</strong> {token.location}
+            </p>
+            <p>
+              <strong>Price:</strong> {token.price} ETH
+            </p>
+            <Button
+              variant="primary"
+              onClick={() => handleGetTickets(token.id)} // Pass tokenId to the handler
+            >
+              Get Tickets
+            </Button>
+          </Carousel.Caption>
+        </Carousel.Item>
+      ))}
+    </Carousel>
+  );
+};
 
 export default CarouselShow;

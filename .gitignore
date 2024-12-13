@@ -5,6 +5,8 @@
 /blockchain_app/node_modules
 /blockchain_app/.pnp
 /blockchain_app/.pnp.js
+/backend/.env
+.env
 
 # testing
 /blockchain_app/coverage
@@ -22,3 +24,6 @@
 /blockchain_app/npm-debug.log*
 /blockchain_app/yarn-debug.log*
 /blockchain_app/yarn-error.log*
+
+# environment variables
+/backend/.env
